@@ -1,2 +1,1 @@
-# webServer
-This project is about developing a tiny HTTP server that responds to client requests.  
+this is the place where can you play with code
