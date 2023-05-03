@@ -1,1 +1,1 @@
-this is the place where can you play with code
+this is the place where you can play with code
