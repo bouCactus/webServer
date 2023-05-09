@@ -1,0 +1,40 @@
+@This grammer is written in the Extended Backus-Naur Form (EBNF) notation.
+
+
+config_file
+	: server+ comment*
+	;
+
+server
+	: '{' (directive | location | comment)* '}'
+	;
+
+location
+	: '{' (directive | comment)* '}'
+	;
+
+directive
+	: key value_list ';' comment*
+	;
+
+key
+	: STRING
+	;
+
+value_list
+	: value+
+	;
+
+value
+	: STRING
+	;
+
+comment
+	: '#' STRING*
+
+STRING
+	: [a-z]+
+	;
+
+
+
