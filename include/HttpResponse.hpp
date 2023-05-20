@@ -4,6 +4,8 @@
 #include "HttpRequest.hpp"
 #include "HttpStatusCodes.hpp"
 #include <map>
+#include <unistd.h>
+#include <netinet/in.h>
 class HttpResponse{
 public:
 
@@ -18,11 +20,12 @@ public:
   void setBody(std::string body);
   void sendFile(const std::string path);
   void setDate(const std::string date);
-  void setSocket(const int socketId);
-  void send();
-  void sendchanck();
-  void sendBuffer(std::string data, size_t size);
-  void end();
+  int  getBodySize();
+  std::string getBody();
+  // void sendit();
+  // void sendchanck();
+  // void sendBuffer(std::string data, size_t size);
+  // void end();
 
 
   

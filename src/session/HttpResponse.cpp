@@ -41,23 +41,25 @@ void HttpResponse::setVersion(const std::string version){
   this->_version = version;
 }
 
-void HttpResponse::setSocket(const int socketId){
-  this->_socketId = socketId;
-}
+
 void HttpResponse::setDate(const std::string date){
   std::cout << "not implemented yet" << std::endl;
   this->_date = date;
 }// i don't know yet
 
 
-void HttpResponse::end(){
-  std::cout << "not implemented yet"<<std::endl;
+// void HttpResponse::end(){
+  // std::cout << "not implemented yet"<<std::endl;
 
-}
+// }
 
 void HttpResponse::setBody(const std::string body){
   _body = body;
 }
 
-
-
+std::string HttpResponse::getBody(){
+  return (_body);
+}
+int HttpResponse::getBodySize(){
+  return (_body.size());
+}

@@ -3,12 +3,12 @@
 #include "HttpRequest.hpp"
 
 HttpResponse HttpMethodProcessor::processGetRequest(HttpRequest& req /* configObj*/) {
-  // std::cout << "GET request not implemented "<< std::endl;
+  std::cout << "GET request not implemented "<< std::endl;
   (void)req;
   HttpResponse res(200);
   res.appendHeader("Content-type" , "text/html");
   res.appendHeader("Connection" ,"keep-alive");
-  res.setBody("<html> <body>hello word</body></html>");
+  res.setBody("<html> <body>error 404</body></html>");
   return (res);
     
 }

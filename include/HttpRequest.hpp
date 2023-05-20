@@ -36,7 +36,7 @@ public:
     return (*this);
   }
   void printRaw(){
-    std::cout <<  this->_method << "-" << this->_path << "-" << this->_version<< std::endl;
+    std::cout <<  this->_method << " - " << this->_path << " - " << this->_version<< std::endl;
   }
   std::string getMethod(){
     return (_method);

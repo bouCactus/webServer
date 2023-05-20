@@ -3,21 +3,24 @@
 
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-
+#include "HttpMethodProcessor.hpp"
 
 class HttpClient{
 
 public:
+  HttpRequest req;
+  HttpResponse res;
+
   HttpClient(){}; //skiping error ({})
+  HttpClient(int socket);
   ~HttpClient(){}; //skiping error ({})
   
   void processRequest(/*HttpRequest& req*/);
-  void send();
+  void sendit();
   void sendChunk();
   void sendBuffer();
 private:
-  HttpRequest req;
-  HttpResponse res;
+  int _socket;
   /*
     socket
     config;
