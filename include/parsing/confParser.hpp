@@ -1,0 +1,60 @@
+#pragma once
+
+#include <iostream>
+#include "./confLexer.hpp"
+#include "./confParseError.hpp"
+#include "./confAST.hpp"
+#include "./confTypes.hpp"
+
+#include <vector>
+#include <map>
+
+
+// typedef std::vector<std::string>::size_type size_v;
+// typedef std::string value_t;
+// typedef std::vector<value_t> values_t;
+// typedef std::string dkey_t;
+// typedef std::map<dkey_t, values_t > dirs_t;
+// typedef std::pair<dkey_t, values_t> dir_t;
+// typedef dirs_t::iterator dirs_it;
+// typedef values_t::iterator values_it;
+
+
+
+// struct server {
+// 	public:
+// 	dirs_t directives;
+// 	std::vector<dirs_t > locations;
+// };
+
+class Parser {
+	private:
+		Lexer *_lxr;
+		Type	_currentBlock;
+		Parser(Parser &){};
+		Parser &operator=(Parser &p){return p;};
+		servers_t servers;
+		locations_it _currentLocation;
+	public:
+		Parser(std::string path);
+		servers_t operator()();
+		void				parse_block(Token t);
+		directive_t			parse_directive();
+		directive_t			validate(directive_t d);
+		void				validate_max(values_t			values);
+		void				validate_listen(values_t		values);
+		void				validate_server_name(values_t	values);
+		void				validate_index(values_t			values);
+		void				validate_error_page(values_t	values);
+		void				validate_path(values_t			values);
+		void				validate_root(values_t			values);
+		void				validate_autoindex(values_t		values);
+		void				validate_set(values_t			values);
+		void				validate_cgi(values_t			values);
+		void				validate_host(values_t			values);		
+		void				validate_allow(values_t			values);
+		void				validate_return(values_t		values);
+		void				validate_cgi_allow(values_t 	values);
+		
+		~Parser();
+};
