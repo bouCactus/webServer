@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 class HttpResponse{
 public:
+  HttpStatusCodes status;
 
   HttpResponse(void);
   HttpResponse(int statusCode);
@@ -22,22 +23,17 @@ public:
   void setDate(const std::string date);
   int  getBodySize();
   std::string getBody();
-  // void sendit();
-  // void sendchanck();
-  // void sendBuffer(std::string data, size_t size);
-  // void end();
-
-
-  
-
-  // void send_response(int new_socket, HttpResponse response);
+  int  getStatus();
+  std::string getVersion();
+  std::string getHeaders();
+  std::string errorResponse(std::string version ,int status);
+ 
 private:
-  HttpStatusCodes status;
+  
   std::map<std::string, std::string> _headers;
-  std::string _status;
+  int _status;
   std::string _version;
   std::string _date;
-  int         _socketId;
   std::string _body;
 
 };

@@ -1,4 +1,4 @@
-#include "../../include/HttpRequest.hpp"
+#include "HttpRequest.hpp"
 
 HttpRequest::HttpRequest(void){
   std::cout << "Resquest: constructor not implemented yet" << std::endl;
