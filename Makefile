@@ -21,10 +21,9 @@ SRCS =  $(addsuffix .cpp, $(addprefix src/session/, $(SESSION))) \
 	$(CXX)  $(CXXFLAGS) $(INC) -c $< -o $@
 
 all : $(NAME)
-	
 
 $(NAME): $(OBJ)
-	@$(CXX)  $(CFLAGS) $(OBJ) $(INC)  -o $(NAME)
+	@$(CXX)  $(CFLAGS) $(OBJ) $(INC) -o $(NAME)
 	@[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 	@[ -d $(BIN) ] || mkdir -p $(BIN)
 	@mv $(OBJ) $(MYDIR)
@@ -34,8 +33,10 @@ clean :
 	@$(RM) $(OBJ) $(MYDIR)
 
 fclean : clean
-	@$(RM) $(NAME) $()
+	@$(RM) $(NAME) $(BUILD)
 
 re : fclean all
 
-.PHONY:			all clean fclean re bonus
+include test/parsing/makefile
+
+.PHONY:			all clean fclean re bonus test_parsing
