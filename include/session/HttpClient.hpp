@@ -4,6 +4,7 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "HttpMethodProcessor.hpp"
+#include "confAST.hpp"
 
 class HttpClient{
 
@@ -15,16 +16,13 @@ public:
   HttpClient(int socket);
   ~HttpClient(){}; //skiping error ({})
   
-  void processRequest(/*HttpRequest& req*/);
+  void processRequest(servers_it& conf_S);
   void sendit();
   void sendChunk();
   void sendBuffer();
 private:
   int _socket;
-  /*
-    socket
-    config;
-   */
+  
 };
 
 #endif // __HTTPCLIENT_H__

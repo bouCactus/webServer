@@ -3,12 +3,13 @@
 #include <iostream>
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
+#include "confAST.hpp"
 class HttpMethodProcessor{
 public:
   
-  HttpResponse processGetRequest(HttpRequest& req);
-  HttpResponse processPostRequest(HttpRequest& req);
-  HttpResponse processDeleteRequest(HttpRequest& req);
+  HttpResponse processGetRequest(HttpRequest& req , servers_it& conf_S);
+  HttpResponse processPostRequest(HttpRequest& req , servers_it& conf_S);
+  HttpResponse processDeleteRequest(HttpRequest& req , servers_it& conf_S);
 
 private:
 

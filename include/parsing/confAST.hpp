@@ -40,6 +40,9 @@ class Config {
     public:
         Config(std::string const &path);
         servers_t getServers();
-        void print() ;
+        void DisplayValues(values_t val);
+        void DisplayServerDirectives(Server &s);
+        void DisplayServerLocation(Location &l);
+        void Display();
 };
 

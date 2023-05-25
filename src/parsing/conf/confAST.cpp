@@ -9,45 +9,46 @@ Config::Config(std::string const &path) {
 	_servers = Parser(path)();
 };
 
-void Config::print()  {
-	servers_it s_it = _servers.begin();
-	int i = 0;
 
-	for (; s_it != _servers.end() && ++i; s_it++ )
+void Config::DisplayValues(values_t val) {
+	for(values_it it = val.begin(); it != val.end(); it++)
+		std::cout << *it << " ";
+	std::cout << "\n";
+};
+
+void Config::DisplayServerLocation(Location &l) {
+	std::cout << "\t\tRedirections: "; DisplayValues(l.getRedirect());
+	std::cout << "\t\tRoot: " << l.getRoot() << "\n";
+	std::cout << "\t\tIndexs: "; DisplayValues(l.getIndex());
+	std::cout << "\t\tauto Index: " << l.isAutoIndex() << "\n";
+	std::cout << "\t\tis POST allowed: " << l.isAllowed(POST) << "\n";
+	std::cout << "\t\tis GET allowed: " << l.isAllowed(GET) << "\n";
+	std::cout << "\t\tis DELETE allowed: " << l.isAllowed(DELETE) << "\n";
+};
+void Config::DisplayServerDirectives(Server &s) {
+	std::cout << "\tPorst: "; DisplayValues(s.getPorts());
+	std::cout << "\tHost: " << s.getHost() << "\n";
+	std::cout << "\tServer Names: "; DisplayValues(s.getServerNames());
+	std::cout << "\tError page: " << s.getErrorPage() << "\n";
+	std::cout << "\tMax: " << s.getMax() << "\n";
+};
+
+void Config::Display() {
+	int n = 0;
+	for(servers_it it = _servers.begin(); it != _servers.end(); it++)
 	{
-		std::cout << "******* server [ " << i;
-		std::cout << " ] *******\n";
-		directives_t d = s_it->getDirectives();
-		directives_it d_it = d.begin();
-		for (; d_it != d.end(); d_it++)
+		std::cout << "SERVER [ " << ++n << " ]\n";
+		DisplayServerDirectives(*it);
+		locations_t locs = it->getLocations();
+		int j = 0;
+		for (locations_it l = locs.begin(); l != locs.end(); l++)
 		{
-			std::cout << d_it->first << " : ";
-			values_it v_it = d_it->second.begin();
-			for (; v_it != d_it->second.end(); v_it++)
-				std::cout << *v_it << " ";
-			std::cout << "\n";
+			std::cout << "\tLoaction [ " << ++j << " ]\n";
+			DisplayServerLocation(l->second);
 		}
-		locations_t l = s_it->getLocations();
-		locations_it l_it = l.begin();
-		for (; l_it != l.end(); l_it++)
-		{
-			std::cout << "---- location [ ";
-			std::cout << l_it->first << " ] ------\n";
-			
-			directives_t &d = l_it->second.getDirectives();
-			directives_it d_it = d.begin();
-			for (; d_it != d.end(); d_it++)
-			{
-				std::cout << d_it->first << " : ";
-				values_it v_it = d_it->second.begin();
-				for (; v_it != d_it->second.end(); v_it++)
-					std::cout << *v_it << " ";
-				std::cout << "\n";
-			}
-		}
-
 	}
-}
+};
+
 
 servers_t Config::getServers() { return _servers; }
 

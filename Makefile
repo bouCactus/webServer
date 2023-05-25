@@ -5,17 +5,17 @@ BUILD= build
 MYDIR= $(BUILD)/objs 
 BIN= $(BUILD)/bin
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror
+CXXFLAGS = -Wall -Wextra -Werror 
 OBJ=$(SRCS:.cpp=.o)
 OBJBONUS=$(SRCBONUS:.cpp=.o)
 
-SESSION = HttpResponse HttpRequest HttpMethodProcessor HttpClient
+SESSION = HttpResponse HttpRequest HttpMethodProcessor HttpClient fileSystem
 PARSING = confAST confLexer confParser confValidate
 MAIN = main
 
 SRCS =  $(addsuffix .cpp, $(addprefix src/session/, $(SESSION))) \
 		$(addsuffix .cpp, $(addprefix src/parsing/conf/, $(PARSING)))\
-		$(addsuffix .cpp, $(addprefix src/, $(MAIN)))
+		$(addsuffix .cpp, $(addprefix test/, $(MAIN)))
 
 .cpp.o:
 	$(CXX)  $(CXXFLAGS) $(INC) -c $< -o $@
@@ -37,6 +37,9 @@ fclean : clean
 
 re : fclean all
 
+run : all clean
+	$(BIN)/$(NAME)
 include test/parsing/makefile
+
 
 .PHONY:			all clean fclean re bonus test_parsing

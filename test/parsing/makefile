@@ -12,4 +12,6 @@ test_parsing: $(OBJ_TEST_PARSING)
 		@[ -d $(BIN) ] || mkdir -p $(BIN)
 		@mv $(OBJ_TEST_PARSING) $(MYDIR)
 		@mv $(NAME_TEST_PARSING) $(BIN)
+	
+
 

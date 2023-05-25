@@ -4,6 +4,7 @@
 #include <sstream>
 #include <map>
 #include <iostream>
+#include "fileSystem.hpp"
 /* some headers i found
 
     CONTENT_LENGTH – The length of the request body (as a string).
@@ -30,18 +31,20 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  HttpRequest parser(std::string rawData){
+  void parser(std::string rawData){
     std::stringstream ss(rawData);
-    ss >> this->_method >> _path >> _version ;
-    return (*this);
+    std::string path;
+    ss >> this->_method >> path >> _version ;
+    _path.setPath(path);
+    std::cout << "parser get path" << std::endl;
   }
   void printRaw(){
-    std::cout <<  this->_method << " - " << this->_path << " - " << this->_version<< std::endl;
+    std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
   }
   std::string getMethod(){
     return (_method);
   }
-  std::string getPath(){
+  http::filesystem::Path getPath(){
     return (_path);
   }
   std::string getVersion(){
@@ -49,7 +52,7 @@ public:
   }
 private:
   std::string _method;
-  std::string _path;
+  http::filesystem::Path _path; // this a class which deal with proning staff of path
   std::string _version;
   std::map<std::string, std::string> headers;
 

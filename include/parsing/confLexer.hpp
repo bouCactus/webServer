@@ -3,7 +3,6 @@
 #include "./confTypes.hpp"
 
 
-
 struct Token {
 	
 	int			start;
