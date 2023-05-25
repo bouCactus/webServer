@@ -1,6 +1,7 @@
 #include "confTypes.hpp"
 #include "confParser.hpp"
 #include "confParseError.hpp"
+#include <sstream>
 
 Key	getKey(std::string key)
 {
@@ -25,7 +26,12 @@ int str_is_num(std::string s)
 {
 	for(size_s i = 0; i < s.size(); i++)
 		if (!isdigit(s[i]))	return 0;
-	return 1;
+	return !s.size() ? 0 : 1;
+}
+int str_isalnum(std::string s) {
+	for(size_s i = 0; i < s.size(); i++)
+		if (!isalnum(s[i]))	return 0;
+	return !s.size() ? 0 : 1;
 }
 
 
@@ -38,8 +44,13 @@ void Parser::validate_listen(values_t values){
 	values_it it = values.begin();
 	for (; it != values.end(); it++)
 	{
-		if (str_is_num((*it).substr(0, (*it).length())))
+		char *str;
+		std::string port = (*it).substr(0, (*it).length());
+		if (str_is_num(port))
+		{	if (strtod(port.c_str(), &str) > 65535)
+				throw Parse_error(std::string("") + "port [ " + port + " ] is  out range.");
 			continue ;
+		}
 		throw Parse_error(std::string("") + "port should a number.");
 	}
 	return ;
@@ -47,14 +58,42 @@ void Parser::validate_listen(values_t values){
 
 void Parser::validate_host(values_t values){
 	std::string err;
+	if (_currentBlock == LOCATION)
+		throw Parse_error(err + "unexpected host directive in location block");
 	if (values.size() != 1)
 		throw Parse_error(err + "too many values in host directive");
+	std::string ss = (*values.begin());
+	std::istringstream iss(ss);
+	std::string oct;
+	char *str;
+	int n = 0;
+	while (std::getline(iss, oct, '.') && n < 5)
+	{
+		std::cout << oct << "\n";
+		if (!str_is_num(oct))
+			throw Parse_error(err + "invalid ip address [ " + ss + "]");
+		if (strtod(oct.c_str(), &str) > 255)
+			throw Parse_error(err + "invalid ip address [ " + ss + "]");
+		n++;
+	}
+	if (n != 4)
+		throw Parse_error(err + "invalid ip address [ " + ss + "]");
 	return ;
 }
 
-void Parser::validate_error_page(values_t	values){(void)values;};
+void Parser::validate_error_page(values_t	values){
+	std::string err;
+	if (_currentBlock == LOCATION)
+		throw Parse_error(err + "unexpected error_page directive in location block");
+	if (values.size() != 1)
+		throw Parse_error(err + "too many values in error_page directive");
+	if (!str_isalnum(*values.begin()))
+		throw Parse_error(err + "server name should be [0-9a-Z]");
+};
 
-void Parser::validate_server_name(values_t	values){(void)values;};
+void Parser::validate_server_name(values_t	values){
+	(void)values;
+};
 
 void Parser::validate_max(values_t values){
 	if (values.size() != 1) 
