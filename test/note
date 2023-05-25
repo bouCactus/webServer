@@ -1,0 +1,20 @@
+/* ---
+server {
+	listen 80 50; 
+	host 172.0.0.1; 
+	location /home {
+		root /home;
+        index index.html;
+	}
+   
+}
+____________________
+Config config("/Users/aboudarg/project/webServer/webServer/test/file.conf");
+  servers_t servers = config.getServers();
+  servers_it it = servers.begin();
+
+  values_t ports = it->getPorts();
+  values_it Pit = ports.begin();
+  std::cout << *(Pit--) << std::endl;
+  std::cout << *(Pit++) << std::endl;
+  ----*/ result same value; 50
