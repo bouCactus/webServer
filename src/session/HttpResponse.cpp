@@ -1,5 +1,5 @@
-#include "../../include/HttpResponse.hpp"
-#include "../../include/HttpStatusCodes.hpp"
+#include "HttpResponse.hpp"
+#include "HttpStatusCodes.hpp"
 
 HttpResponse::~HttpResponse(void){
   std::cout << "response: destructor not implemented yet" << std::endl;
