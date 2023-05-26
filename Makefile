@@ -15,15 +15,16 @@ MAIN = main
 
 SRCS =  $(addsuffix .cpp, $(addprefix src/session/, $(SESSION))) \
 		$(addsuffix .cpp, $(addprefix src/parsing/conf/, $(PARSING)))\
-		$(addsuffix .cpp, $(addprefix test/, $(MAIN)))
+
 
 .cpp.o:
 	$(CXX)  $(CXXFLAGS) $(INC) -c $< -o $@
 
 all : $(NAME)
 
+
 $(NAME): $(OBJ)
-	@$(CXX)  $(CFLAGS) $(OBJ) $(INC) -o $(NAME)
+	@$(CXX)  $(CFLAGS) src/main.cpp $(OBJ) $(INC) -o $(NAME)
 	@[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 	@[ -d $(BIN) ] || mkdir -p $(BIN)
 	@mv $(OBJ) $(MYDIR)
@@ -39,7 +40,8 @@ re : fclean all
 
 run : all clean
 	$(BIN)/$(NAME)
-include test/parsing/makefile
+include test/parsing/Makefile.mk
+include test/simpleResponse/Makefile.mk
 
 
 .PHONY:			all clean fclean re bonus test_parsing
