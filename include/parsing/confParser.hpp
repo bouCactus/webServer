@@ -9,24 +9,6 @@
 #include <vector>
 #include <map>
 
-
-// typedef std::vector<std::string>::size_type size_v;
-// typedef std::string value_t;
-// typedef std::vector<value_t> values_t;
-// typedef std::string dkey_t;
-// typedef std::map<dkey_t, values_t > dirs_t;
-// typedef std::pair<dkey_t, values_t> dir_t;
-// typedef dirs_t::iterator dirs_it;
-// typedef values_t::iterator values_it;
-
-
-
-// struct server {
-// 	public:
-// 	dirs_t directives;
-// 	std::vector<dirs_t > locations;
-// };
-
 class Parser {
 	private:
 		Lexer *_lxr;

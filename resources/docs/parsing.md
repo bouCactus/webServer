@@ -104,7 +104,7 @@ try {
 |listen          |`getPorts();`                  |values_t             | void | ...|
 |host            |`getHost();`                   |value_t            |void | ...|
 |server_names    |`getServerNames();`            |values_t |void | ...|
-|error_page    |`getErrorPage();`                |value_t |void | ...|
+|error_page    |`getErrorPage();`                |values_t |void | ...|
 |client_max_body_size    |`getMax();`            |value_t  |void | ...|
 
 ### In addition, these are some other methods for the Server class:

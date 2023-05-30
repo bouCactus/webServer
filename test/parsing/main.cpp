@@ -5,7 +5,7 @@ using namespace std;
 #include "confAST.hpp"
 #include "error.hpp"
 #include "types.hpp"
-
+#include <fstream>
 
 void parser_test(char *path)
 {
