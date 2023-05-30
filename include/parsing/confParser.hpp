@@ -46,10 +46,8 @@ class Parser {
 		void				validate_server_name(values_t	values);
 		void				validate_index(values_t			values);
 		void				validate_error_page(values_t	values);
-		void				validate_path(values_t			values);
 		void				validate_root(values_t			values);
 		void				validate_autoindex(values_t		values);
-		void				validate_set(values_t			values);
 		void				validate_cgi(values_t			values);
 		void				validate_host(values_t			values);		
 		void				validate_allow(values_t			values);

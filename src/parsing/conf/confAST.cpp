@@ -25,6 +25,7 @@ void Config::DisplayServerLocation(Location &l) {
 	std::cout << "\t\tis GET allowed: " << l.isAllowed(GET) << "\n";
 	std::cout << "\t\tis DELETE allowed: " << l.isAllowed(DELETE) << "\n";
 };
+
 void Config::DisplayServerDirectives(Server &s) {
 	std::cout << "\tPorst: "; DisplayValues(s.getPorts());
 	std::cout << "\tHost: " << s.getHost() << "\n";
