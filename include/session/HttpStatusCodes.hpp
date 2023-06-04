@@ -52,7 +52,7 @@ public:
   HttpStatusCodes() {
     statusCodes[HTTP_OK] = "OK";
     statusCodes[HTTP_MOVED_PERMANENTLY] = "Moved Permanently";
-    statusCodes[400] = "Bad Request";
+    statusCodes[404] = "Not Found";
     // Add more status codes as needed
   }
 

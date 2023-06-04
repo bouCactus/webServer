@@ -4,10 +4,11 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <time.h>
 
 using std::string;
 using http::filesystem::Path;
-
+namespace hfs = http::filesystem;
 http::filesystem::Path::Path(){
 }
 http::filesystem::Path::~Path(){
@@ -82,7 +83,7 @@ string http::filesystem::Path::stem(){
 
 string http::filesystem::Path::extension(){
   std::size_t found = _path.find_last_of(".");
-  return (_path.substr(found));
+  return (_path.substr(found + 1));
 }
 
 bool http::filesystem::Path::has_root_path(){
@@ -217,3 +218,35 @@ void http::filesystem::Path::setPath(string path){
 }
 
 
+size_t http::filesystem::fileSize(const Path& path){
+  struct stat s;
+  if (lstat(path.c_str(), &s) != 0){
+    std::cout << "error has been thrown or should be throwning" << std::endl;
+    return (0);
+  }
+  if (!S_ISREG(s.st_mode)){
+    std::cout << "error has been thrown or should be throwning" << std::endl;
+    return (0);
+  }
+  return (s.st_size);
+}
+
+std::time_t http::filesystem::getFileMTime(const Path& path){
+  struct stat s;
+
+  if (lstat(path.c_str(), &s) != 0){
+    std::cout << "error has been thrown or should be throwning" << std::endl;
+    exit(20);
+  }
+  return (s.st_mtime);
+ }
+
+bool hfs::Path::empty(){
+  if (_path.empty())
+    return (true);
+  return (false);
+}
+
+void hfs::Path::appendFile(const std::string fileName){
+  _path += fileName;
+}

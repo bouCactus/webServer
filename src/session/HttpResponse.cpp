@@ -1,5 +1,7 @@
 #include "HttpResponse.hpp"
 #include "HttpStatusCodes.hpp"
+#include "fileSystem.hpp"
+#include <sstream>
 
 HttpResponse::~HttpResponse(void){
   std::cout << "response: destructor not implemented yet" << std::endl;
@@ -9,13 +11,14 @@ HttpResponse::HttpResponse(const HttpResponse &other){
     std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;
 }
-HttpResponse &HttpResponse::operator=(const HttpResponse &other){
+HttpResponse &HttpResponse::operator = (const HttpResponse &other){
   if (this != &other) {
-    _headers = other._headers;
-    _status = other._status;
-    _version = other._version;
-    _date = other._date;
-    _body = other._body;
+    _headers			     = other._headers;
+    _fileName			     = other._fileName;
+    _status			     = other._status;
+    _version			     = other._version;
+    _date			     = other._date;
+    _body			     = other._body;
   }
   return *this;
 }
@@ -44,7 +47,7 @@ void HttpResponse::setVersion(const std::string version){
 void HttpResponse::setDate(const std::string date){
   std::cout << "not implemented yet" << std::endl;
   this->_date = date;
-}// i don't know yet
+}				// i don't know yet
 
 
 // void HttpResponse::end(){
@@ -71,7 +74,7 @@ int HttpResponse::getStatus(){
 }
 
 std::string HttpResponse::getHeaders(){
-  std::string head;
+  std::string	head;
   for (std::map<std::string, std::string>::iterator it = _headers.begin() ; it != _headers.end() ; it++){
     head.append(it->first);
     head.append(": ");
@@ -81,15 +84,39 @@ std::string HttpResponse::getHeaders(){
   return (head);
 }
 
-std::string HttpResponse::errorResponse(std::string version, int status){ 
-   std::stringstream st;
+void HttpResponse::defaultErrorResponse(int status){ 
+   std::stringstream	st;
+   std::string		body;
+  this->setStatus(status);
+  this->setVersion("HTTP/1.1");
+  this->appendHeader("Content-Type","text/html");
 
-  st << version << " " << status << " " << this->status.getStatusMessage(status) << "\r\n"
-     << "Content-Type: text/html" << "\r\n"
-     << "<!DOCTYPE html><html><head><title>"
-     << status << this->status.getStatusMessage(status)
-     << "</title></head><body><h1>"
+  
+  st << "<!DOCTYPE html><html><head><title>"
+     << status << " " << this->status.getStatusMessage(status)
+     << "</title></head><body><h1><center>"
+     << status << " "
      << this->status.getStatusMessage(status)
-     << "</h1><p>server team wish you to find other url</p></body></html>";
-  return (st.str());
+     << "<hr>"
+     << "</center></h1><p><center>webServer/0.01</center></p></body></html>";
+  body = st.str();
+  this->appendHeader("Content-length", TO_STRING(body.size())); 
+  this->setBody(body);
+}
+
+
+void HttpResponse::writeHeader(int statu, Smap_t& header){
+  Smap_t::iterator	mapIt;
+  this->setVersion("HTTP/1.1");
+  this->setStatus(statu);
+  for(mapIt = header.begin(); mapIt != header.end(); mapIt++)
+    this->appendHeader(mapIt->first, mapIt->second);
+}
+
+
+void HttpResponse::setFilename(const http::filesystem::Path path){
+  _fileName = path;
+}
+http::filesystem::Path        HttpResponse::getFilename(){
+  return (_fileName);
 }

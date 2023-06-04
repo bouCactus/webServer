@@ -18,7 +18,7 @@ SRCS =  $(addsuffix .cpp, $(addprefix src/session/, $(SESSION))) \
 
 
 .cpp.o:
-	$(CXX)  $(CXXFLAGS) $(INC) -c $< -o $@
+	@$(CXX)  $(CXXFLAGS) $(INC) -c $< -o $@
 
 all : $(NAME)
 

@@ -6,35 +6,49 @@
 #include <map>
 #include <unistd.h>
 #include <netinet/in.h>
+typedef std::map<std::string, std::string> Smap_t;
+
+
+#define TO_STRING(x)	({			\
+    std::stringstream	ss;			\
+    ss << (x);					\
+    ss.str();					\
+})
+
 class HttpResponse{
 public:
-  HttpStatusCodes status;
+  HttpStatusCodes	status;
+
 
   HttpResponse(void);
   HttpResponse(int statusCode);
   HttpResponse(const HttpResponse &other);
-  HttpResponse &operator=(const HttpResponse &other);
+  HttpResponse			&operator = (const HttpResponse &other);
   ~HttpResponse(void);
-  void appendHeader(std::string name, std::string value);
-  void setVersion(const std::string version);
-  void setStatus(const int status);
-  void setBody(std::string body);
-  void sendFile(const std::string path);
-  void setDate(const std::string date);
-  int  getBodySize();
-  std::string getBody();
-  int  getStatus();
-  std::string getVersion();
-  std::string getHeaders();
-  std::string errorResponse(std::string version ,int status);
+  void				 appendHeader(std::string name, std::string value);
+  void				 setVersion(const std::string version);
+  void				 setStatus(const int status);
+  void				 setBody(std::string body);
+  void				 setFilename(http::filesystem::Path path);
+  http::filesystem::Path	 getFilename();
+  void				 sendFile(const std::string path);
+  void				 setDate(const std::string date);
+  int				 getBodySize();
+  std::string			 getBody();
+  int				 getStatus();
+  std::string			 getVersion();
+  std::string			 getHeaders();
+  void				 defaultErrorResponse(int status);
+  void				 writeHeader(int satuts, Smap_t&header);
  
 private:
   
-  std::map<std::string, std::string> _headers;
-  int _status;
-  std::string _version;
-  std::string _date;
-  std::string _body;
+  Smap_t	_headers;
+  http::filesystem::Path	_fileName;
+  int				_status;
+  std::string			_version;
+  std::string			_date;
+  std::string			_body;
 
 };
 #endif // __THHPRESPONSE__H_

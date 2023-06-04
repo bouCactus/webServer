@@ -8,7 +8,6 @@ $(NAME_TEST_RESPONSE): $(OBJ)
 		@$(CXX)  $(CFLAGS) $(MAIN) $(OBJ) $(INC) -o $(SERVER_NAME)
 		@[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 		@[ -d $(BIN) ] || mkdir -p $(BIN)
-		echo --------------
 		@mv $(OBJ) $(MYDIR)
 		@mv $(SERVER_NAME) $(BIN)
 

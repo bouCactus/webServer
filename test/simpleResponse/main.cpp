@@ -38,7 +38,7 @@ int serverSetup(int port){
 
 int accept_new_connection(int server, struct sockaddr_in  *addr){
   int new_socket;
-  std::cout << "he run from here ->>>" << std::endl;
+  std::cout << "new connection ->>>" << std::endl;
   if ((new_socket = accept(server, (struct sockaddr*) addr,(socklen_t*) addr)) < 0 ){
     perror("Error: accept()");
     exit(4);
@@ -56,24 +56,23 @@ void handle_connection(int socket, servers_it& serverConf){
 
   HttpClient client(socket);
   client.req.parser(buffer);
-  std::cout << "kharaja besalam" << std::endl;
-  client.req.printRaw();
   std::cout << "-----end of the request---" << std::endl;
   client.processRequest(serverConf);
   
-    std::cout << "-------------------end of response------------" << std::endl;
+  std::cout << "-------------------end of response------------" << std::endl;
   close(socket);
 
 }
 
 int main(){
-  Config config("/Users/aboudarg/project/webServer/webServer/test/file.conf");
-  servers_t servers = config.getServers();
-  servers_it it = servers.begin();
-  values_t ports = it->getPorts();
-  values_it Pit = ports.begin();
-  std::cout << *Pit << std::endl;
+  try{
+    Config config("/Users/aboudarga/project/webServer/test/simpleResponse/file.conf");
 
+    servers_t servers = config.getServers();
+    servers_it it = servers.begin();
+    values_t ports = it->getPorts();
+    values_it Pit = ports.begin();
+  
   
   int server, max_fd = -1;
   fd_set ready_sockets, current_sockets;
@@ -113,6 +112,11 @@ int main(){
     }
 
   close(server);
+
+  }catch(std::exception &e){
+    std::cout << "err: "<< e.what() << "\n";
+  }
+
   std::cout << "hello world" << std::endl;
   return (0);
 }

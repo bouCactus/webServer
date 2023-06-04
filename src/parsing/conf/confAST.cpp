@@ -60,8 +60,11 @@ directives_t    &Server::getDirectives() { return _directives; };
 // SEND ME YOUR LOACTION,, Let's focus on communicating
 Location		Server::at(std::string location) {
 	locations_it it = _locations.find(location);
-	if (it == _locations.end())
-		LOG_THROW(); throw std::exception();
+
+	if (it == _locations.end()){
+	  LOG_THROW();
+	  throw std::exception();
+	}
 	return (it->second);
 }
 

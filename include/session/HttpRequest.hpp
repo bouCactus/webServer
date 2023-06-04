@@ -5,6 +5,7 @@
 #include <map>
 #include <iostream>
 #include "fileSystem.hpp"
+#include "confAST.hpp"
 /* some headers i found
 
     CONTENT_LENGTH – The length of the request body (as a string).
@@ -24,6 +25,7 @@
     SERVER_PORT – The port of the server (as a string).
 
  */
+namespace hfs = http::filesystem;
 class HttpRequest{
 public:
   HttpRequest();
@@ -36,7 +38,6 @@ public:
     std::string path;
     ss >> this->_method >> path >> _version ;
     _path.setPath(path);
-    std::cout << "parser get path" << std::endl;
   }
   void printRaw(){
     std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
@@ -44,12 +45,20 @@ public:
   std::string getMethod(){
     return (_method);
   }
-  http::filesystem::Path getPath(){
+  http::filesystem::Path getPath()const {
     return (_path);
   }
   std::string getVersion(){
     return (_version);
   }
+
+  std::string findlocationOfUrl(const hfs::Path&	path,
+					     const servers_it& conf)const;
+  hfs::Path addRoot(const hfs::Path&    path,
+				 const std::string&  location,
+				 const servers_it&   conf)const; 
+  hfs::Path getPathWRoot(const hfs::Path& path,
+				      const servers_it& conf)const; 
 private:
   std::string _method;
   http::filesystem::Path _path; // this a class which deal with proning staff of path
