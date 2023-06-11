@@ -73,7 +73,7 @@ typedef  std::string::size_type size_s;
 #define DEF_INDEX "index.html"
 
 #ifndef DEBUG
-#define DEBUG 0
+#define DEBUG 1
 #endif
 
 

@@ -29,7 +29,7 @@ class Server {
         values_t        getPorts();
         value_t         getHost();
         values_t        getServerNames();
-        value_t         getErrorPage();
+        values_t         getErrorPage();
         value_t         getMax();
 };
 
