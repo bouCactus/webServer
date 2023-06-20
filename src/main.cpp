@@ -12,15 +12,15 @@ int	main(int ac, char** av) {
 		/*** Multiplexing ***/
 		servers_t	servers = conf.getServers();
 		HttpServer	httpServer(servers);
-		
+
 		httpServer.start();
 
-		httpServer.closeServerSockets();
+		// httpServer.closeServerSockets();
 	}
 	catch(std::exception &e)
 	{
 		// WHATEVER!!
-		perror(e.what());
+		std::cout << e.what() << std::endl;
 	}
 	return  (0);
 }

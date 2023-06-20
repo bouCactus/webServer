@@ -30,29 +30,37 @@ class HttpServer
 		~HttpServer();
 
 		/***************************************************************/
-		/*********** Setting up and Starting the HttpServer ***********/
+		/*********** Setting up and Starting the HttpServer ************/
 		/***************************************************************/
 		int		createNewSocket();
 		void	setupServers(servers_it &server, int socket, const std::string& port);
 		void	start();
 
-		void	waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds);
+		bool	waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds);
 		int		acceptIncomingConnection(fd_set &tempReadfds);
 		void	checkForReading(fd_set &tempReadfds);
 		void	checkForWriting(fd_set &tempWritefds);
 
 		void	closeServerSockets();
 
+
+		/*************************************************/
+		/*************** Helpers and Tools ***************/
+		/*************************************************/
+        void    removeClient(client_it& client);
+
 		/*************************************************/
 		/************** Getters and Setters **************/
 		/*************************************************/
-		void		setNewFD(int newsocket);
-		clients_t&	getClients();
-		int			getMaxFileDescriptor();
+		serverSock_t&	getServerSockets();
+		clients_t&	    getClients();
+		int			    getMaxFileDescriptor();
+
+		void		    setNewFD(int newsocket);
 
 	private:
-		serverSock_t	serverSockets;
 		clients_t		_clients;
+		serverSock_t	serverSockets;
 		fd_set			readfds;
 		fd_set			writefds;
 		int				maxFileDescriptor;

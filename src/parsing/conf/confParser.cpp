@@ -167,4 +167,6 @@ servers_t Parser::operator()(){
 	return servers;
 }
 
-Parser::~Parser(){};
+Parser::~Parser(){
+    delete _lxr;
+};

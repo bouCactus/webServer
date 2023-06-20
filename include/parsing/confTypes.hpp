@@ -43,7 +43,6 @@ typedef std::list<Server> servers_t;
 
 // directive/directives
 typedef std::pair<value_t, values_t> directive_t;
-
 typedef std::map<value_t, values_t> directives_t;
 
 // location/locations

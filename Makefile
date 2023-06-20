@@ -9,7 +9,7 @@ CXXFLAGS = -Wall -Wextra -Werror
 OBJ=$(SRCS:.cpp=.o)
 OBJBONUS=$(SRCBONUS:.cpp=.o)
 
-SESSION =  HttpClient HttpServer # fileSystem HttpResponse HttpRequest HttpMethodProcessor
+SESSION =  HttpClient HttpServer fileSystem HttpResponse HttpRequest HttpMethodProcessor
 PARSING = confAST confLexer confParser confValidate
 MAIN = main
 
@@ -45,9 +45,10 @@ re : fclean all
 
 run : all clean
 	$(BIN)/$(NAME)
-# include test/parsing/Makefile.mk
-# include test/simpleResponse/Makefile.mk
-# include test/multiplexer/Makefile.mk
+
+include test/parsing/Makefile.mk
+include test/simpleResponse/Makefile.mk
+include test/multiplexer/Makefile.mk
 
 
 .PHONY:			all clean fclean re bonus test_parsing

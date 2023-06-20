@@ -13,6 +13,7 @@ const int	MAX_BUFFER_SIZE = 1024;
 int			maxFileDescriptor;
 
 int main() {
+
 	// Create a socket for the server.
 	int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 	fcntl(serverSocket, F_SETFL, O_NONBLOCK);
@@ -33,11 +34,11 @@ int main() {
 	std::memset(&serverAddress, 0, sizeof(serverAddress));
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(8080);
-	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serverAddress.sin_addr.s_addr = inet_addr("0.0.0.0");
 
 	// Bind the socket to the server address.
 	if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-		std::cerr << "Error binding socket" << std::endl;
+		std::cerr << "Error binding socket : " << strerror(errno) << std::endl;
 		close(serverSocket);
 		return -1;
 	}
@@ -70,13 +71,13 @@ int main() {
 		fd_set tempWritefds = writefds;
 
 		// Wait for any activity on the file descriptors.
-		int activity = select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, NULL);
+		int activity = select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, &tv);
 		if (activity == -1) {
 			std::cerr << "Error in select()" << std::endl;
 			close(serverSocket);
 			return -1;
 		}
-
+        if (activity) {
 		// Check for activity on the server socket.
 		if (FD_ISSET(serverSocket, &tempReadfds)) {
 			// Accept the incoming connection.
@@ -141,6 +142,7 @@ int main() {
 				}
 			}
 		}
+        }
 	}
 
 	// Close the server socket.
@@ -172,4 +174,52 @@ int main() {
 // 		perror(e.what());
 // 	}
 // 	return  (0);
+// }
+
+// int main(int argc, char *argv[])
+// {
+//     struct addrinfo hints, *res, *p;
+//     int status;
+//     char ipstr[INET6_ADDRSTRLEN];
+
+//     if (argc != 2) {
+//         fprintf(stderr,"usage: showip hostname\n");
+//         return 1;
+//     }
+
+//     memset(&hints, 0, sizeof hints);
+//     hints.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
+//     hints.ai_socktype = SOCK_STREAM;
+
+//     if ((status = getaddrinfo(argv[1], NULL, &hints, &res)) != 0) {
+//         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+//         return 2;
+//     }
+
+//     printf("IP addresses for %s:\n\n", argv[1]);
+
+//     for(p = res;p != NULL; p = p->ai_next) {
+//         void *addr;
+//         char *ipver;
+
+//         // get the pointer to the address itself,
+//         // different fields in IPv4 and IPv6:
+//         if (p->ai_family == AF_INET) { // IPv4
+//             struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+//             addr = &(ipv4->sin_addr);
+//             ipver = "IPv4";
+//         } else { // IPv6
+//             struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
+//             addr = &(ipv6->sin6_addr);
+//             ipver = "IPv6";
+//         }
+
+//         // convert the IP to a string and print it:
+//         inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
+//         printf("  %s: %s\n", ipver, ipstr);
+//     }
+
+//     freeaddrinfo(res); // free the linked list
+
+//     return 0;
 // }
