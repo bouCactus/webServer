@@ -241,7 +241,7 @@ std::time_t http::filesystem::getFileMTime(const Path& path){
   return (s.st_mtime);
  }
 
-bool hfs::Path::empty(){
+bool hfs::Path::empty() const{
   if (_path.empty())
     return (true);
   return (false);

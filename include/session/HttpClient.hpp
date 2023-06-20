@@ -21,10 +21,13 @@ public:
   HttpClient(int socket);
   ~HttpClient(){}; //skiping error ({})
   
+
   void processRequest(servers_it& conf_S);
   void sendResponse();
   void sendFileResponse(HttpResponse& res, int _socket);
+
 private:
+  std::string _bufferRequest;
   bool _writing;
   bool _isHeaderSent;
   std::streamsize _writingPos;

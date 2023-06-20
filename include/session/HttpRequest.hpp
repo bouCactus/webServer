@@ -4,6 +4,7 @@
 #include <sstream>
 #include <map>
 #include <iostream>
+#include <algorithm>
 #include "fileSystem.hpp"
 #include "confAST.hpp"
 /* some headers i found
@@ -33,25 +34,17 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  void parser(std::string rawData){
-    std::stringstream ss(rawData);
-    std::string path;
-    ss >> this->_method >> path >> _version ;
-    _path.setPath(path);
-  }
+  void parser(std::string rawData);
+
   void printRaw(){
     std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
+    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end() ; it++){
+      std::cout << it->first << ":" << it->second << std::endl;
+    }
   }
-  std::string getMethod(){
-    return (_method);
-  }
-  http::filesystem::Path getPath()const {
-    return (_path);
-  }
-  std::string getVersion(){
-    return (_version);
-  }
-
+  std::string getMethod();
+  http::filesystem::Path getPath()const;
+  std::string getVersion();
   std::string findlocationOfUrl(const hfs::Path&	path,
 					     const servers_it& conf)const;
   hfs::Path addRoot(const hfs::Path&    path,
@@ -64,6 +57,11 @@ private:
   http::filesystem::Path _path; // this a class which deal with proning staff of path
   std::string _version;
   std::map<std::string, std::string> headers;
+  std::string _requestBuffer;
+
+  void processRequestHeaders();
+  void processRequestBody();
+
 
 };
 

@@ -16,7 +16,7 @@ void sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated thin
 
 void HttpClient::sendFileResponse(HttpResponse& res, int _socket/*just to test*/)
 {
-  //here where you open file and send by chunks 
+  //here where you open file and send it  by chunks 
  
   std::ifstream file(res.getFilename().c_str(), std::istream::in);
   char		buffer[1024];
@@ -92,3 +92,4 @@ HttpClient::HttpClient(int socket):_writing(false),
 				   _writingPos(0){
   _socket = socket;
 }
+

@@ -20,6 +20,107 @@ HttpRequest &HttpRequest::operator = (const HttpRequest &other){
 }
 
 
+std::string HttpRequest::getMethod(){
+  return (_method);
+}
+http::filesystem::Path HttpRequest::getPath()const {
+  return (_path);
+}
+std::string HttpRequest::getVersion(){
+  return (_version);
+}
+
+inline std::string& rtrim(std::string& s){
+    s.erase(s.find_last_not_of(" \t\n\r\f\v") + 1);
+    return s;
+}
+
+// trim from beginning of string (left)
+inline std::string& ltrim(std::string& s){
+    s.erase(0, s.find_first_not_of(" \t\n\r\f\v"));
+    return s;
+}
+
+// trim from both ends of string (right then left)
+inline std::string& trim(std::string& s){
+    return ltrim(rtrim(s));
+}
+
+void HttpRequest::processRequestHeaders(){
+  std::size_t endOfHeaders = _requestBuffer.find("\r\n\r\n");
+  if (endOfHeaders != std::string::npos){
+    std::string headersData = _requestBuffer.substr(0, endOfHeaders);
+    _requestBuffer = _requestBuffer.substr(endOfHeaders, _requestBuffer.size());
+
+    std::istringstream iss(headersData);
+    std::string line;
+
+    // Parse the request line
+    std::getline(iss, line);
+    std::istringstream lineStream(line);
+    std::string path;
+    lineStream >> _method >> path >> _version;
+    _path.setPath(path);
+    // Parse the headers
+    while (std::getline(iss, line) && !line.empty()) {
+      // Split each header line into key and value
+      std::size_t colonPos = line.find(':');
+      if (colonPos != std::string::npos) {
+	std::string key = line.substr(0, colonPos);
+	std::string value = line.substr(colonPos + 1);
+	std::string whitespaces (" \t\f\v\n\r");
+	// Trim leading and trailing whitespaces from the key and value
+	trim(value);
+	trim(key);
+
+	// Store the header in the headers map
+	headers[key] = value;
+      }
+    }
+  }
+}
+void HttpRequest::storeChunked(){
+
+}
+void HttpRequest::parseChunked(){
+
+}
+void HttpRequest::processRequestBody(){
+  std::cout << "-----------------------body start-------------------" << std::endl;
+  std::cout <<  _requestBuffer << std::endl;
+  std::cout << "--------------------------------body end---------" << std::endl;
+
+  std::string contentLength = headers["Content-Length"];
+  std::string transferEncoding = headers["Transfer-Encoding"];
+  if (!contentLength.empty()){
+    std::cout << "Content lenght found" << std::endl;
+    storeBufferTofile();
+  }
+  else if (transferEncoding == "chunked"){
+    parseChunked();
+    std::cout << "chunked-----------------chunked" << std::endl;
+
+  // }else{
+    // std::cout << "chunked not found" << std::endl;
+  // }
+}
+void HttpRequest::parser(std::string rawData){
+  /// need to implement it first;
+  _requestBuffer += rawData;
+
+   if (!_method.empty() && !_path.empty() && !_version.empty()) {
+        // Request headers have already been parsed, process the request body
+     std::cout << "something ..." << std::endl;
+        processRequestBody();
+        return;
+   }else{
+     std::cout << "processRequestHeaders()" << std::endl;
+     processRequestHeaders();
+     processRequestBody();
+   }
+     
+}
+
 
 std::string HttpRequest::findlocationOfUrl(const hfs::Path&	path,
 					   const servers_it& conf)const {

@@ -74,14 +74,13 @@ int HttpResponse::getStatus(){
 }
 
 std::string HttpResponse::getHeaders(){
-  std::string	head;
-  for (std::map<std::string, std::string>::iterator it = _headers.begin() ; it != _headers.end() ; it++){
-    head.append(it->first);
-    head.append(": ");
-    head.append(it->second);
-    head.append("\r\n");
+  std::stringstream headerStream;
+  for (std::map<std::string, std::string>::iterator it = _headers.begin();
+       it != _headers.end() ; it++){
+    headerStream << it->first << ": " << it->second << "\r\n" ;
   }
-  return (head);
+
+  return (headerStream.str());
 }
 
 void HttpResponse::defaultErrorResponse(int status){ 
@@ -107,10 +106,10 @@ void HttpResponse::defaultErrorResponse(int status){
 
 void HttpResponse::writeHeader(int statu, Smap_t& header){
   Smap_t::iterator	mapIt;
-  this->setVersion("HTTP/1.1");
-  this->setStatus(statu);
+  setVersion("HTTP/1.1");
+  setStatus(statu);
   for(mapIt = header.begin(); mapIt != header.end(); mapIt++)
-    this->appendHeader(mapIt->first, mapIt->second);
+    appendHeader(mapIt->first, mapIt->second);
 }
 
 

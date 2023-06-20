@@ -47,15 +47,25 @@ int accept_new_connection(int server, struct sockaddr_in  *addr){
 }
 
 void handle_connection(int socket, servers_it& serverConf){
+  HttpClient client(socket);
   std::cout << "---------reading start for here----------" << std::endl;
+  int readByte;
+  readByte = -1;
+  while(true){
   char buffer[1024];
-  if (recv(socket, buffer, sizeof(buffer), 0) == -1){
+  if ((readByte = recv(socket, buffer, sizeof(buffer), 0)) == -1){
     perror("Rec()");
     exit(5);
   }
-
-  HttpClient client(socket);
+  buffer[1023] = '\0';
   client.req.parser(buffer);
+  client.req.printRaw();
+  std::cout << "----------end__________" << std::endl;
+  if (std::string(buffer).find("0\r\n\r\n") != std::string::npos){
+    std::cout << "-----------" << std::endl;
+    break;
+  }
+  }
   std::cout << "-----end of the request---" << std::endl;
   client.processRequest(serverConf);
   
@@ -66,7 +76,7 @@ void handle_connection(int socket, servers_it& serverConf){
 
 int main(){
   try{
-    Config config("/Users/aboudarga/project/webServer/test/simpleResponse/file.conf");
+    Config config("/Users/aboudarg/project/webServer_2/test/simpleResponse/file.conf");
 
     servers_t servers = config.getServers();
     servers_it it = servers.begin();

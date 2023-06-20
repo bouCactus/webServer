@@ -43,7 +43,7 @@ namespace http{
       bool	has_extension();
       bool      endswith(char del) const ;
       void	setPath(string path);
-      bool      empty();
+      bool      empty()const;
       void      appendFile(const string fileName);
 
       Path();
