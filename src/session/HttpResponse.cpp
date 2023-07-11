@@ -4,11 +4,11 @@
 #include <sstream>
 
 HttpResponse::~HttpResponse(void){
-  std::cout << "response: destructor not implemented yet" << std::endl;
+//   std::cout << "response: destructor not implemented yet" << std::endl;
 }
 
 HttpResponse::HttpResponse(const HttpResponse &other){
-    std::cout << "Response: copy consturctor not implemented yet" << std::endl;
+    // std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;
 }
 HttpResponse &HttpResponse::operator = (const HttpResponse &other){

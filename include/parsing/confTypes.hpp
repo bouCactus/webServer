@@ -43,7 +43,6 @@ typedef std::list<Server> servers_t;
 
 // directive/directives
 typedef std::pair<value_t, values_t> directive_t;
-
 typedef std::map<value_t, values_t> directives_t;
 
 // location/locations
@@ -73,7 +72,7 @@ typedef  std::string::size_type size_s;
 #define DEF_INDEX "index.html"
 
 #ifndef DEBUG
-#define DEBUG 0
+#define DEBUG 1
 #endif
 
 

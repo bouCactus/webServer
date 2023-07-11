@@ -2,6 +2,9 @@
 #include "confTypes.hpp"
 #include "confLexer.hpp"
 
+/**
+ * @brief   initializing the Parser.
+ */
 Parser::Parser(std::string path)
 {
 	_lxr = new Lexer(path);
@@ -9,89 +12,107 @@ Parser::Parser(std::string path)
 };
 
 
+/**
+ * @brief   Check if the value is inserted in [values].
+ * @param	res		pair of iterators to the value being inserted
+ *					and  bool indecate whether the insertion
+ *				  	is successful or not.
+ * @return         	res passed as a parameter.
+ */
 std::pair<values_it, bool>
 safe_value_insert(std::pair<values_it, bool> res) {
 	std::string err;
 	if (!res.second)
-		throw Parse_error(err
+		{ LOG_THROW(); throw Parse_error(err
 			+ "duplicate value [ "
-			+ *(res.first) + " ] ");
+			+ *(res.first) + " ] "); }
 	return res;
 }
 
-// THIS IS ATOME O FTHE HOLE THING, EVERYTHING STARTS WITH A DIRCTIVE!!
-directive_t Parser::parse_directive(){
-	directive_t d;
-	Token t = _lxr->get_next_token();
-	std::string err;
 
-	err = "unexcpected token: ";
-	if (t.token_type == END || t.token_type == SIMICOLONE)
-		throw Parse_error(err + t.val);
-	d.first = t.val;
-
-	int key_col = t.column;
-	t = _lxr->get_next_token();
-	while (t.token_type != END && t.token_type != SIMICOLONE) {
-		if (key_col != t.column)
-			throw Parse_error(err + t.val);
-		safe_value_insert(d.second.insert(t.val));
-		t = _lxr->get_next_token();
-	}
-	if (d.second.size() == 0 || t.token_type != SIMICOLONE)
-		throw Parse_error(err + t.val);
-	return validate(d);
-}
-
-
+/**
+ * @brief   		Check if the value is inserted in [directives].
+ * @param	res		pair of iterators to the value being inserted
+ *					and  bool indecate whether the insertion
+ *					is successful or not.
+ * @return  	    res passed as a parameter.
+ */
 std::pair<directives_it, bool>
 safe_directive_insert(std::pair<directives_it, bool> res) {
 	std::string err;
 	if (!res.second)
-		throw Parse_error(err
+		{ LOG_THROW(); throw Parse_error(err
 			+ "duplicate directive [ "
-			+ res.first->first + " ] ");
+			+ res.first->first + " ] "); }
 	return res;
 }
 
-
+/**
+ * @brief   		Check if the value is inserted in [locations].
+ * @param	res		pair of iterators to the value being inserted
+ *					and  bool indecate whether the insertion
+ *					is successful or not.
+ * @return       	res passed as a parameter.
+ */
 std::pair<locations_it, bool>
 safe_location_insert(std::pair<locations_it, bool> res) {
 	std::string err;
 	if (!res.second)
-		throw Parse_error(err 
+		{ LOG_THROW(); throw Parse_error(err 
 			+ "duplicate location [ "
-			+ res.first->first + " ] ");
+			+ res.first->first + " ] "); }
 	return res;
 }
 
-// JUST TO CPMPLICATE THINGS I WILL GO RECURSIVE!
+/**
+ * @brief   		parse a simple directive within a server/location block.
+ * @return       	pair of [value_t] represent key and [values_t]
+ * 					represent the value.
+ */
+directive_t Parser::parse_directive(){
+	directive_t d;
+	Token t = _lxr->getNextToken();
+	std::string err;
+
+	err = "unexcpected token: ";
+	if (t.token_type == END || t.token_type == SIMICOLONE)
+		{ LOG_THROW(); throw Parse_error(err + t.val); }
+	d.first = t.val;
+
+	int key_col = t.column;
+	t = _lxr->getNextToken();
+	while (t.token_type != END && t.token_type != SIMICOLONE) {
+		if (key_col != t.column)
+			{ LOG_THROW(); throw Parse_error(err + t.val); }
+		safe_value_insert(d.second.insert(t.val));
+		t = _lxr->getNextToken();
+	}
+	if (d.second.size() == 0 || t.token_type != SIMICOLONE)
+		{ LOG_THROW(); throw Parse_error(err + t.val); }
+	return validate(d);
+}
+
+/**
+ * @brief   		parse a server/location block in a config file.
+ * @param	t       The current Token.
+ */
 void	Parser::parse_block(Token t) {
+
 	std::string err = "unexcpected token: ";
-	
+
 	if (t.token_type == END) return ;
-
 	if (_currentBlock == SERVER) servers.push_back(Server());
-	
-
-	// if (_currentBlock == LOCATION)
-	// 	servers.back().getLocations().push_back(dirs_t());
-
 	if (t.token_type != SERVER && _currentBlock == SERVER)
-			throw Parse_error(err + t.val);
-	t = _lxr->get_next_token();
+			{ LOG_THROW(); throw Parse_error(err + t.val); }
+	t = _lxr->getNextToken();
 	if (t.token_type == END || t.token_type != LCURL)
-		throw Parse_error(err + t.val);
+		{ LOG_THROW(); throw Parse_error(err + t.val); }
 	while (_lxr->peek().token_type != END
 		&& _lxr->peek().token_type != RCURL) {
 		if (_lxr->peek().token_type == LOCATION
 			&& _currentBlock == SERVER) {
-			
-			// NEED SOME CHECKES!!
-			// skip 'location'
-			_lxr->get_next_token();
-			// get val
-			Token t = _lxr->get_next_token();
+			_lxr->getNextToken();
+			Token t = _lxr->getNextToken();
 			_currentLocation = safe_location_insert(
 					servers
 					.back().getLocations()
@@ -117,26 +138,26 @@ void	Parser::parse_block(Token t) {
 			);		
 		}
 		else 
-			throw Parse_error(err + _lxr->peek().val);
+			{ LOG_THROW(); throw Parse_error(err + _lxr->peek().val);}
 	}
 	if (_lxr->peek().token_type != RCURL)
-		throw Parse_error(err + _lxr->peek().val);
-	_lxr->get_next_token();
-
+		{ LOG_THROW(); throw Parse_error(err + _lxr->peek().val); }
+	_lxr->getNextToken();
 	if (_currentBlock == LOCATION) {
-		//servers[servers.size() - 1].locations.push_back(l);
 		_currentBlock = SERVER;
 		return ;
 	}
-	parse_block(_lxr->get_next_token());	
+	parse_block(_lxr->getNextToken());	
 };
 
-
+/**
+ * @brief   		parse the config file.
+ * @return	      	servers_t represnt list of servers blocks.
+ */
 servers_t Parser::operator()(){
 	try {
-		Token t = _lxr->get_next_token();
+		Token t = _lxr->getNextToken();
 		parse_block(t);
-		//exit(1);
 	}catch (Parse_error &e)
 	{
 		std::cout << "Error: " << e.what();
@@ -146,5 +167,6 @@ servers_t Parser::operator()(){
 	return servers;
 }
 
-
-Parser::~Parser(){};
+Parser::~Parser(){
+    delete _lxr;
+};

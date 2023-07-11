@@ -22,11 +22,10 @@ class Lexer {
 		Lexer &operator=(Lexer &l){return l;};
 	public:
 		Lexer(std::string path);
-		void	skip_space();
-		void	skip_comment();
-		void	skip_nl_and_space();
+		void	skipComment();
+		void	skipEmptyLines();
 		void	log(int print_source);
-		Token	get_next_token();
+		Token	getNextToken();
 		Token	peek();
 		~Lexer();
 };

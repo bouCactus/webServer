@@ -5,7 +5,7 @@ using namespace std;
 #include "confAST.hpp"
 #include "error.hpp"
 #include "types.hpp"
-
+#include <fstream>
 
 void parser_test(char *path)
 {
@@ -13,7 +13,6 @@ void parser_test(char *path)
 	try {
 		Config conf(path);
 		conf.Display();
-
 	} catch(std::exception &e)
 	{
 		// WHATEVER!!

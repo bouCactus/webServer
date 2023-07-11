@@ -4,15 +4,51 @@
 #include "HttpMethodProcessor.hpp"
 #include <unistd.h>
 #include <netinet/in.h>
+
 #include <fstream>
 void sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated things */){
   std::stringstream	st;
   std::string		content;
+
   st << res.getVersion() << " " << res.getStatus() << " " << res.status.getStatusMessage(res.getStatus()) << "\r\n"
      << res.getHeaders() << "\r\n";
   content = st.str();
   send(_socket, content.c_str(), content.size(), 0);
 }
+
+
+
+HttpClient::HttpClient(const HttpClient& httpClient) {
+
+    // std::cout << ">>> Copy Constructor called\n";
+    this->_socket = httpClient.getSocket();
+    this->conf = new Server(*(httpClient.getConfiguration()));
+}
+
+HttpClient& HttpClient::operator=(const HttpClient& httpClient) {
+    // std::cout << ">>> Assignement operator called\n";
+    if (this != &httpClient) {
+        this->_socket = httpClient.getSocket();
+        this->conf = new Server(*(httpClient.getConfiguration()));
+
+    }
+	return *this;
+}
+
+
+HttpClient::HttpClient(Server *server, int socket) : _socket(socket) {
+	this->conf = server;
+    _sendFinished = false;
+    _writing = false;
+    _isHeaderSent = false;
+    _writingPos = 0;
+}
+
+HttpClient::~HttpClient(){
+    delete conf;
+    // std::cout << ">>> Destructor called\n";
+}
+
 
 void HttpClient::sendFileResponse(HttpResponse& res, int _socket/*just to test*/)
 {
@@ -43,6 +79,10 @@ void HttpClient::sendFileResponse(HttpResponse& res, int _socket/*just to test*/
   
 }
 
+/**********************************************************/
+/**************** Handle Request Functions ****************/
+/**********************************************************/
+
 void HttpClient::processRequest(servers_it& conf_S) {
   HttpMethodProcessor	method;
   std::cout << _isHeaderSent << std::endl;
@@ -64,12 +104,11 @@ void HttpClient::processRequest(servers_it& conf_S) {
     std::cout << "ready to send file "<< _writingPos << std::endl;
     sendFileResponse(res,_socket);
     std::cout << "_writingPos" << _writingPos << std::endl;
-    while (_writingPos > 0){
+    while (_writingPos > 0){// still confusing is this right 
     std::cout << "_writingPos" << _writingPos << std::endl;
     sendFileResponse(res,_socket);
     }
 
-     
   }else{
     std::cout << "normal sendResponse" << std::endl;
     sendResponse();
@@ -87,9 +126,21 @@ void HttpClient::sendResponse(){	//This is unstable, so use it carefully because
   std::cout << "response sent..." << std::endl;
 }
 
-HttpClient::HttpClient(int socket):_writing(false),
-				   _isHeaderSent(false),
-				   _writingPos(0){
-  _socket = socket;
-}
+/**********************************************************/
+/************* Client Configuration Functions *************/
+/**********************************************************/
 
+Server*	HttpClient::getConfiguration() const {return conf;}
+int		HttpClient::getSocket() const {return _socket;}
+
+// void	HttpClient::setConfiguration(Server& server) {conf = server;}
+void	HttpClient::set_socket(int clientSocket) {_socket = clientSocket;}
+
+// void	HttpClient::set_Reading_State(bool state) {_readyTo_Read = state;}
+// void	HttpClient::set_Writing_State(bool state) {_readyTo_Write = state;}
+// bool	HttpClient::ReadyTo_Read() {return _readyTo_Read;}
+// bool	HttpClient::ReadyTo_Write() {return _readyTo_Write;}
+
+
+void	HttpClient::set_ToFinish(bool state) {_sendFinished = state;}
+bool	HttpClient::sendIsFinished() {return _sendFinished;}

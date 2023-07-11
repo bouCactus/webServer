@@ -7,11 +7,11 @@ HttpRequest::HttpRequest(void){
 };
 
 HttpRequest::~HttpRequest(void){
-  std::cout << "Resquest: destructor not implemented yet" << std::endl;
+//   std::cout << "Resquest: destructor not implemented yet" << std::endl;
 }
 
 HttpRequest::HttpRequest(const HttpRequest &other){
-  std::cout << "Resquest: copy consturctor not implemented yet" << std::endl;
+//   std::cout << "Resquest: copy consturctor not implemented yet" << std::endl;
   (void)other;
 }
 HttpRequest &HttpRequest::operator = (const HttpRequest &other){
@@ -151,16 +151,12 @@ void HttpRequest::processRequestBody(){
 }
 void HttpRequest::parser(std::string rawData){
   _requestBuffer += rawData;
-
    if (_method.empty() || _path.empty() || _version.empty()) {
         // Request headers have already been parsed, process the request body
      processRequestHeaders();
    }
    std::cout << "processRequestHeaders()" << std::endl;
    processRequestBody();
-
-   
-     
 }
 
 
