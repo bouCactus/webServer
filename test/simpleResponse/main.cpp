@@ -61,7 +61,7 @@ void handle_connection(int socket, servers_it& serverConf){
   client.req.parser(buffer);
   client.req.printRaw();
   std::cout << "----------end__________" << std::endl;
-  if (std::string(buffer).find("0\r\n\r\n") != std::string::npos){
+  if (client.req.isRequestEnd()){
     std::cout << "-----------" << std::endl;
     break;
   }
@@ -76,7 +76,7 @@ void handle_connection(int socket, servers_it& serverConf){
 
 int main(){
   try{
-    Config config("/Users/aboudarg/project/webServer_2/test/simpleResponse/file.conf");
+    Config config("/Users/aboudarga/1337/webServer_2/test/simpleResponse/file.conf");
 
     servers_t servers = config.getServers();
     servers_it it = servers.begin();

@@ -1,7 +1,9 @@
 #include "HttpRequest.hpp"
-
+#include <fstream>
 HttpRequest::HttpRequest(void){
   std::cout << "Resquest: constructor not implemented yet" << std::endl;
+   _chunkSize = -1;
+   _requestEnded = false;
 };
 
 HttpRequest::~HttpRequest(void){
@@ -79,12 +81,53 @@ void HttpRequest::processRequestHeaders(){
     }
   }
 }
-void HttpRequest::storeChunked(){
+bool HttpRequest::storeChunkToFile(std::string& chunk){
+    std::ofstream file("chunked_data.txt", std::ios::binary | std::ios::app);
+    if (!file) {
+        std::cerr << "Failed to open file for storing chunked data." << std::endl;
+        return false;
+    }
 
+    file.write(chunk.data(), chunk.size());
+    file.close();
+    return (true);
 }
-void HttpRequest::parseChunked(){
+  
 
+
+void HttpRequest::parseChunked() {
+    while (!_requestBuffer.empty()) {
+      if (_chunkSize == (size_t)-1) {
+            size_t lineEnd = _requestBuffer.find("\r\n");
+            if (lineEnd == std::string::npos)
+                break;
+
+            std::string chunkSizeStr = _requestBuffer.substr(0, lineEnd);
+
+            try {
+                _chunkSize = std::stoul(chunkSizeStr, nullptr, 16);
+                _requestBuffer.erase(0, lineEnd + 2);
+            } catch (...) {
+                break;
+            }
+        }
+        if (_chunkSize == 0){
+            std::cout << "end of the chunks" << std::endl;
+	    _requestEnded = true;
+            break;
+        }
+        if (_requestBuffer.length() >= _chunkSize) {
+            std::string chunkData = _requestBuffer.substr(0, _chunkSize);
+            std::cout << chunkData;
+	    storeChunkToFile(chunkData);
+            _requestBuffer.erase(0, _chunkSize + 2);
+            _chunkSize = -1;
+        } else {
+            break;
+        }
+    }
 }
+
 void HttpRequest::processRequestBody(){
   std::cout << "-----------------------body start-------------------" << std::endl;
   std::cout <<  _requestBuffer << std::endl;
@@ -94,30 +137,29 @@ void HttpRequest::processRequestBody(){
   std::string transferEncoding = headers["Transfer-Encoding"];
   if (!contentLength.empty()){
     std::cout << "Content lenght found" << std::endl;
-    storeBufferTofile();
+    if (storeChunkToFile(_requestBuffer)){
+      _requestBuffer.erase(0, _requestBuffer.size());
+    }
   }
   else if (transferEncoding == "chunked"){
     parseChunked();
     std::cout << "chunked-----------------chunked" << std::endl;
 
-  // }else{
-    // std::cout << "chunked not found" << std::endl;
-  // }
+  }else{
+    std::cout << "chunked not found" << std::endl;
+  }
 }
 void HttpRequest::parser(std::string rawData){
-  /// need to implement it first;
   _requestBuffer += rawData;
 
-   if (!_method.empty() && !_path.empty() && !_version.empty()) {
+   if (_method.empty() || _path.empty() || _version.empty()) {
         // Request headers have already been parsed, process the request body
-     std::cout << "something ..." << std::endl;
-        processRequestBody();
-        return;
-   }else{
-     std::cout << "processRequestHeaders()" << std::endl;
      processRequestHeaders();
-     processRequestBody();
    }
+   std::cout << "processRequestHeaders()" << std::endl;
+   processRequestBody();
+
+   
      
 }
 
@@ -170,4 +212,8 @@ hfs::Path HttpRequest::getPathWRoot(const hfs::Path& path, const servers_it& con
   value_t	root = findlocationOfUrl(path, conf);
   std::cout << "root: " << root << std::endl;
   return addRoot(path, root, conf);
+}
+
+bool HttpRequest::isRequestEnd(){
+  return (_requestEnded);
 }

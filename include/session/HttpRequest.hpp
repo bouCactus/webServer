@@ -52,15 +52,21 @@ public:
 				 const servers_it&   conf)const; 
   hfs::Path getPathWRoot(const hfs::Path& path,
 				      const servers_it& conf)const; 
+  bool isRequestEnd();
 private:
   std::string _method;
   http::filesystem::Path _path; // this a class which deal with proning staff of path
   std::string _version;
   std::map<std::string, std::string> headers;
   std::string _requestBuffer;
+  size_t _chunkSize;
+  bool  _requestEnded;
 
   void processRequestHeaders();
   void processRequestBody();
+  void parseChunked();
+  bool storeChunkToFile(std::string& chunk);
+
 
 
 };
