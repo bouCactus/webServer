@@ -1,13 +1,18 @@
 #include "HttpRequest.hpp"
 #include <fstream>
 HttpRequest::HttpRequest(void){
-  std::cout << "Resquest: constructor not implemented yet" << std::endl;
+ std::cout << "Resquest: constructor not implemented yet" << std::endl;
    _chunkSize = -1;
-   _requestEnded = false;
+   _contentLength = 0;
+   _headersProcessed = false;
 };
 
 HttpRequest::~HttpRequest(void){
-//   std::cout << "Resquest: destructor not implemented yet" << std::endl;
+  std::cout << "Resquest: destructor not implemented yet" << std::endl;
+  for (size_t i = 0; i < _parsed_parts.size(); ++i) {
+      _parsed_parts[i].fileStream->close();
+      delete _parsed_parts[i].fileStream;
+  }
 }
 
 HttpRequest::HttpRequest(const HttpRequest &other){
@@ -15,7 +20,7 @@ HttpRequest::HttpRequest(const HttpRequest &other){
   (void)other;
 }
 HttpRequest &HttpRequest::operator = (const HttpRequest &other){
-  std::cout << "Request: copy assignment not implemented yet" << std::endl;
+  //std::cout << "Request: copy assignment not implemented yet" << std::endl;
   (void)other;
   return (*this);
 
@@ -52,7 +57,7 @@ void HttpRequest::processRequestHeaders(){
   std::size_t endOfHeaders = _requestBuffer.find("\r\n\r\n");
   if (endOfHeaders != std::string::npos){
     std::string headersData = _requestBuffer.substr(0, endOfHeaders);
-    _requestBuffer = _requestBuffer.substr(endOfHeaders, _requestBuffer.size());
+    _requestBuffer = _requestBuffer.substr(endOfHeaders+4, _requestBuffer.size());
 
     std::istringstream iss(headersData);
     std::string line;
@@ -68,119 +73,280 @@ void HttpRequest::processRequestHeaders(){
       // Split each header line into key and value
       std::size_t colonPos = line.find(':');
       if (colonPos != std::string::npos) {
-	std::string key = line.substr(0, colonPos);
-	std::string value = line.substr(colonPos + 1);
-	std::string whitespaces (" \t\f\v\n\r");
-	// Trim leading and trailing whitespaces from the key and value
-	trim(value);
-	trim(key);
+	      std::string key = line.substr(0, colonPos);
+	      std::string value = line.substr(colonPos + 1);
+	      std::string whitespaces (" \t\f\v\n\r");
+	      // Trim leading and trailing whitespaces from the key and value
+	      trim(value);
+	      trim(key);
 
-	// Store the header in the headers map
-	headers[key] = value;
+	      // Store the header in the headers map
+	      headers[key] = value;
       }
     }
+    _headersProcessed = true;
   }
 }
-bool HttpRequest::storeChunkToFile(std::string& chunk){
-    std::ofstream file("chunked_data.txt", std::ios::binary | std::ios::app);
-    if (!file) {
-        std::cerr << "Failed to open file for storing chunked data." << std::endl;
-        return false;
-    }
 
-    file.write(chunk.data(), chunk.size());
-    file.close();
-    return (true);
+std::ofstream* createFile(const std::string& name) {
+    std::ofstream* fileStream = new std::ofstream(name.c_str(), std::ios::binary | std::ios::app);
+    if (!fileStream || !fileStream->is_open()) {
+        std::cerr << "Failed to open file for storing chunked data." << std::endl;
+        if (fileStream) delete fileStream; // Cleanup the dynamically allocated stream before returning NULL
+        return NULL;
+    }
+    return fileStream;
+}
+
+bool HttpRequest::prepareFileForPostRequest() {
+        // Get the location for file upload
+        FormDataPart part;
+        part.name = "chunkData";
+        part.filename = "chunkData.txt"; // You can modify this to get it from contentType
+
+        part.fileStream = createFile(part.filename);
+        if (part.fileStream == NULL)
+          return (false);
+        _parsed_parts.push_back(part); // Store the part for later use
+        return true;
+}
+
+void HttpRequest::closeFile() {
+  if (!_parsed_parts.empty()) {
+       FormDataPart part = _parsed_parts.back();
+      part.fileStream->close();
+  }
+}
+
+bool HttpRequest::storeChunkToFile(std::string& chunk) {
+  if (_parsed_parts.empty()) {
+       if (!prepareFileForPostRequest())
+          return false;
+  }
+  FormDataPart& part = _parsed_parts.back(); // Get the last file stream
+  (*part.fileStream) << chunk; // Write the chunk to the file
+  return true;
 }
   
 
 
-void HttpRequest::parseChunked() {
+bool HttpRequest::parseChunkedEncoding() {
     while (!_requestBuffer.empty()) {
-      if (_chunkSize == (size_t)-1) {
+        if (_chunkSize == static_cast<size_t>(-1)) {
             size_t lineEnd = _requestBuffer.find("\r\n");
             if (lineEnd == std::string::npos)
                 break;
 
             std::string chunkSizeStr = _requestBuffer.substr(0, lineEnd);
 
-            try {
-                _chunkSize = std::stoul(chunkSizeStr, nullptr, 16);
-                _requestBuffer.erase(0, lineEnd + 2);
-            } catch (...) {
+            char* endPtr;
+            _chunkSize = std::strtoul(chunkSizeStr.c_str(), &endPtr, 16);
+            if (endPtr != chunkSizeStr.c_str() + lineEnd) // Check if the parsing was successful
                 break;
-            }
+
+            _requestBuffer.erase(0, lineEnd + 2);
         }
-        if (_chunkSize == 0){
+
+        if (_chunkSize == 0) {
             std::cout << "end of the chunks" << std::endl;
-	    _requestEnded = true;
-            break;
+            return true;
         }
-        if (_requestBuffer.length() >= _chunkSize) {
+
+        if (_requestBuffer.length() >= _chunkSize + 2) {
             std::string chunkData = _requestBuffer.substr(0, _chunkSize);
-            std::cout << chunkData;
-	    storeChunkToFile(chunkData);
+            storeChunkToFile(chunkData);
             _requestBuffer.erase(0, _chunkSize + 2);
-            _chunkSize = -1;
+            _chunkSize = static_cast<size_t>(-1);
         } else {
             break;
         }
     }
+    return false;
 }
 
-void HttpRequest::processRequestBody(){
-  std::cout << "-----------------------body start-------------------" << std::endl;
-  std::cout <<  _requestBuffer << std::endl;
-  std::cout << "--------------------------------body end---------" << std::endl;
+FormDataPart parseMultipartFormData(std::string& headers) {
+    FormDataPart part;
+    std::stringstream ss(headers);
 
-  std::string contentLength = headers["Content-Length"];
-  std::string transferEncoding = headers["Transfer-Encoding"];
-  if (!contentLength.empty()){
-    std::cout << "Content lenght found" << std::endl;
-    if (storeChunkToFile(_requestBuffer)){
-      _requestBuffer.erase(0, _requestBuffer.size());
+    std::string line;
+    while (std::getline(ss, line)) {
+        if (line.substr(0, 19) == "Content-Disposition") {
+            size_t name_start = line.find("name=\"") + 6;
+            size_t name_end = line.find("\"", name_start);
+            part.name = line.substr(name_start, name_end - name_start);
+
+            size_t filename_start = line.find("filename=\"", name_end) + 10;
+            size_t filename_end = line.find("\"", filename_start);
+            part.filename = line.substr(filename_start, filename_end - filename_start);
+        } else if (line.substr(0, 13) == "Content-Type:") {
+            size_t content_type_start = line.find(":") + 2;
+            part.content_type = line.substr(content_type_start);
+        }
     }
-  }
-  else if (transferEncoding == "chunked"){
-    parseChunked();
-    std::cout << "chunked-----------------chunked" << std::endl;
-
-  }else{
-    std::cout << "chunked not found" << std::endl;
-  }
-}
-void HttpRequest::parser(std::string rawData){
-  _requestBuffer += rawData;
-   if (_method.empty() || _path.empty() || _version.empty()) {
-        // Request headers have already been parsed, process the request body
-     processRequestHeaders();
-   }
-   std::cout << "processRequestHeaders()" << std::endl;
-   processRequestBody();
+    return part;
 }
 
+bool HttpRequest::prepareFileForPostRequest(FormDataPart& part){
+    std::string fileName;
+    
+        
+        fileName = part.name;// for now replace with filename
+        // TODO
+        // check if file or just text 
+        part.fileStream = createFile(fileName);
+        if (!part.fileStream)
+          return (false);
+   
+    return (true);
+}
 
-std::string HttpRequest::findlocationOfUrl(const hfs::Path&	path,
-					   const servers_it& conf)const {
-  const std::string	separator = "/";
-  const std::string	rootDir	  = "/";
+void HttpRequest::parseMultipartFileContent(const std::string& content, size_t start, size_t end) {
+    if (start >= content.size() || end > content.size() || start > end) {
+        // Invalid positions, handle the error or return early
+        return;
+    }
+    FormDataPart outputFile = _parsed_parts.back();
+    // Write the content between the start and end positions to the file.
+    for (size_t i = start; i < end; ++i) {
+        outputFile.fileStream->put(content[i]);
+    }
+}
 
-  std::string	         pathStr = path.c_str();
+bool HttpRequest::parseBoundaryChunk(std::string& boundary) {
+    const std::string boundaryPrefix = "--" + boundary + "\r\n";
+    const std::string boundarySuffix = boundary + "--" + "\r\n";
+    const size_t boundaryPrefixLength = boundaryPrefix.length();
 
-  while (!pathStr.empty()) {
+    size_t nextBoundaryPos = _requestBuffer.find(boundaryPrefix);
+    size_t endBoundaryPos = _requestBuffer.find(boundarySuffix);
+    while (nextBoundaryPos != std::string::npos || endBoundaryPos != std::string::npos) {
+        if (nextBoundaryPos == 0) {
+            size_t endOfHeaders = _requestBuffer.find("\r\n\r\n");
+            if (endOfHeaders == std::string::npos)
+                return false;
+
+            std::string removeBoundary = _requestBuffer.substr(boundaryPrefixLength, endOfHeaders - boundaryPrefixLength);
+            FormDataPart part = parseMultipartFormData(removeBoundary);
+            _requestBuffer.erase(0, endOfHeaders + 4); // 4 = endOfHeaders.length();
+            prepareFileForPostRequest(part);
+            _parsed_parts.push_back(part);
+        }else if (nextBoundaryPos != std::string::npos){ 
+          parseMultipartFileContent(_requestBuffer, 0, nextBoundaryPos - 2);// 2 for remove "\r\n"
+          closeFile();
+          _requestBuffer.erase(0, nextBoundaryPos);
+        }else if (endBoundaryPos != std::string::npos) {
+          parseMultipartFileContent(_requestBuffer, 0, endBoundaryPos - 4); // 4 for remove "--\r\n"
+          closeFile();
+            _requestBuffer.clear();
+            return true;
+        }
+        nextBoundaryPos = _requestBuffer.find(boundaryPrefix);
+        endBoundaryPos = _requestBuffer.find(boundarySuffix);
+    }
+    if (!_requestBuffer.empty()){
+        parseMultipartFileContent(_requestBuffer, 0, _requestBuffer.length());
+        _requestBuffer.clear();
+    }
+    return false;
+}
+
+bool HttpRequest::processRequestBodyContent(){
+  const std::string& contentLength = headers["Content-Length"];
+  const std::string& transferEncoding = headers["Transfer-Encoding"];
+  const std::string& contentType = headers["Content-Type"];
+  const std::string boundaryPrefix = "boundary=";
+
+
+    if (transferEncoding == "chunked") {
+        // Process chunked data
+        std::cout << "|+|==============chunked==================|+|" << std::endl;
+        return parseChunkedEncoding();
+    }else if (!contentLength.empty()) {
+        _contentLength += _requestBuffer.size();
+        size_t boundaryPos = contentType.find(boundaryPrefix);
+        if (boundaryPos != std::string::npos) {
+            // Process boundary
+            std::string boundary = contentType.substr(boundaryPos + boundaryPrefix.size());
+            return parseBoundaryChunk(boundary);
+        }
+
+        // Process content with known length
+        if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer)) {
+            _requestBuffer.clear();
+        }
+        // Do something when body overflow
+        return (_contentLength == static_cast<size_t>(std::stoi(contentLength)));
+    } 
+    // No content or unsupported encoding
+    return true;
+    
+}
+
+
+bool HttpRequest::parseRequest(const std::string rawData) {
+    _requestBuffer += rawData;
+
+    if (!_headersProcessed) {
+        // Process request headers only if they haven't been parsed yet
+        processRequestHeaders();
+        
+    }
+    // Process the request body
+    return processRequestBodyContent();
+}
+
+std::vector<std::string> getAllDirectories(const std::string& path) {
+    std::vector<std::string> directories;
+    std::string::size_type pos = 0;
+    
+    // If the path starts with a slash, add it as the root directory
+    if (!path.empty() && path[0] == '/') {
+        directories.push_back("/");
+        ++pos;
+    }
+
+    while (pos != std::string::npos) {
+        std::string::size_type nextPos = path.find('/', pos);
+        if (nextPos != std::string::npos) {
+            directories.push_back(path.substr(pos, nextPos - pos));
+            pos = nextPos + 1;
+        } else {
+            directories.push_back(path.substr(pos));
+            pos = nextPos;
+        }
+    }
+
+    return directories;
+}
+
+std::string HttpRequest::findlocationOfUrl(const hfs::Path& path,
+                                           const servers_it& conf) const {
+    const std::string separator = "/";
+    const std::string rootDir = "/";
+
+    std::string pathStr = path.c_str();
+    size_t pos = pathStr.length();  // Start at the end of the string
+
+    while (!pathStr.empty()) {
+        try {
+            conf->at(pathStr);  // where check for location happened
+            return (pathStr);
+        } catch (...) {
+            if (pos == 0) {
+                break;  // Reached the beginning of the string, break the loop
+            }
+            pos = pathStr.find_last_of(
+                separator, pos - 1);  // Find the last separator before 'pos'
+            pathStr.resize(pos);      // Remove the last component from the path
+        }
+    }
     try {
-      conf->at(pathStr);
-      return (pathStr);
-    } catch (std::exception&) {
-      size_t	pos = pathStr.find_last_of(separator);
-      pathStr.erase(pos);
-      if (pathStr.empty()) {
-        pathStr	    = rootDir;
-      }
-    }
-  }
+        conf->at(rootDir);
+        return (rootDir);
 
-  return "";
+    } catch (...) {
+        return ("") ;
+    }
 }
 
 hfs::Path HttpRequest::addRoot(const hfs::Path&		path,
@@ -205,11 +371,10 @@ hfs::Path HttpRequest::addRoot(const hfs::Path&		path,
 }
 
 hfs::Path HttpRequest::getPathWRoot(const hfs::Path& path, const servers_it& conf)const {
+  std::cout << path.c_str() << std::endl;
   value_t	root = findlocationOfUrl(path, conf);
   std::cout << "root: " << root << std::endl;
   return addRoot(path, root, conf);
 }
 
-bool HttpRequest::isRequestEnd(){
-  return (_requestEnded);
-}
+

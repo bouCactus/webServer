@@ -11,7 +11,7 @@ typedef std::pair<int, servers_it>	serverConf;
 
 /*** Clients ***/
 class HttpClient;
-typedef	std::list<HttpClient>	clients_t;
+typedef	std::list<HttpClient*>	clients_t;
 typedef	clients_t::iterator		client_it;
 
 /*** Sockets ***/
@@ -57,7 +57,7 @@ class HttpServer
 		int			    getMaxFileDescriptor();
 
 		void		    setNewFD(int newsocket);
-
+		void			addNewClient(HttpClient* client);
 	private:
 		clients_t		_clients;
 		serverSock_t	serverSockets;

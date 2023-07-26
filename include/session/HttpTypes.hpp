@@ -35,7 +35,7 @@ class HttpError : public std::exception {
             /*** Close Client Sockets ***/
 			client_it	client = httpServer.getClients().begin();
 			for (; client != httpServer.getClients().end(); client++)
-				close(client->getSocket());
+				close((*client)->getSocket());
 		}
 };
 
