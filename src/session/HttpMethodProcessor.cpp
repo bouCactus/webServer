@@ -6,7 +6,7 @@
 
 #include <ctime>
 #include <string>
-
+#include "utilsFunction.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "confAST.hpp"
@@ -19,38 +19,25 @@ bool resourceExists(Path& reqResource) { return (hfs::isExests(reqResource)); }
 HttpResponse createErrorPageResponse(const servers_it& serverConf,
                                      const int statCode) {
     HttpResponse res;
-    (void)serverConf;  // need to check about error page location : ask for
-                       // getErrorPage()
+    (void)(serverConf);
+    // i don't know how to use this getServerNames is it set of names, how
+    //serverConf->getServerNames();
+    std::string severName = "WebServer 0.1";
+    std::stringstream body;
+    std::string statusMessage = res.status.getStatusMessage(statCode);
+
     res.defaultErrorResponse(statCode);
+    res.appendHeader("Content-Type", "text/html");
+    body
+        << "<!DOCTYPE html><html><head><title>" << statCode << " "
+        << statusMessage << "</title></head><body><h1><center>" << statCode
+        << " " << statusMessage << "<hr>"
+        << "</center></h1><p><center>"
+        << severName
+        <<"</center></p></body></html>";
+    res.setBody(body.str());
+    res.appendHeader("Content-length", TO_STRING(res.getBodySize()));
     return (res);
-}
-
-// HttpResponse executeCGIScriptAndGetResponse(Path& reqResource,
-// 					    HttpRequest& req,
-// 					    servers_it& serverConf){
-//   HttpResponse	res;
-//   (void)req;
-//   (void)reqResource;
-//   (void)serverConf;
-//   return (res);
-// }
-
-std::string getTimeGMT() {
-    std::time_t now = std::time(NULL);
-    char buffer[80];
-    // Convert the time to a tm
-    std::tm* tm = std::gmtime(&now);
-    std::strftime(buffer, 80, "%a, %d %b %Y %T GMT", tm);  // Format the time
-    return (buffer);
-}
-
-std::string convertTimeToGMT(std::time_t time) {
-    struct tm lt;
-    char buffer[80];
-    std::string strbuffer;
-    localtime_r(&time, &lt);
-    std::strftime(buffer, 80, "%a, %d %b %Y %T GMT", &lt);  // Format the time
-    return (buffer);
 }
 
 std::string getType(Path& reqResource) {  // just temp
@@ -93,10 +80,10 @@ HttpResponse createRegularFileResponse(Path& reqResource,
     return (res);
 }
 Location getLocationOfFastCGIextension(Path& requestFile,
-                                  const servers_it& serverConf) {
+                                       const servers_it& serverConf) {
     if (!requestFile.has_extension()) {
-       LOG_THROW();
-	    throw std::exception();
+        LOG_THROW();
+        throw std::exception();
     }
     std::string requestFileExtension = requestFile.extension();
     std::string locationName = "." + requestFileExtension + "$";
@@ -105,11 +92,11 @@ Location getLocationOfFastCGIextension(Path& requestFile,
 }
 
 bool hasCGI(Path& reqResource, const servers_it& serverConf) {
-    try{
-      getLocationOfFastCGIextension(reqResource, serverConf);
-      return (true);
-    }catch(...){
-      return (false);
+    try {
+        getLocationOfFastCGIextension(reqResource, serverConf);
+        return (true);
+    } catch (...) {
+        return (false);
     }
 }
 
@@ -153,13 +140,14 @@ Location getLocation(const HttpRequest& req, servers_it& serverConf) {
 }
 
 bool isAutoIndexEnabled(const HttpRequest& req, const servers_it& serverConf) {
-  try{
-    std::string requestedLocationName = req.findlocationOfUrl(req.getPath(), serverConf);
-    Location location = serverConf->at(requestedLocationName);
-    return (location.isAutoIndex());
-  }catch(...){
-    return (false);
-  }
+    try {
+        std::string requestedLocationName =
+            req.findlocationOfUrl(req.getPath(), serverConf);
+        Location location = serverConf->at(requestedLocationName);
+        return (location.isAutoIndex());
+    } catch (...) {
+        return (false);
+    }
 }
 std::string listIndex(const HttpRequest& req, const servers_it& serverConf) {
     DIR* dir;
@@ -193,9 +181,10 @@ HttpResponse getAutoIndex(const HttpRequest& req,
     // res.appendHeader("Connection", "done");
     //++++++++++++++++++++
     responseBodyStream << "<!DOCTYPE html><head><title>"
-       << "Index of " << requestedPath.c_str() << "</title></head><body><h1>"
-       << requestedPath.c_str() << "</h1><hr><pre>"
-       << listIndex(req, serverConf) << "</pre></body></html>";
+                       << "Index of " << requestedPath.c_str()
+                       << "</title></head><body><h1>" << requestedPath.c_str()
+                       << "</h1><hr><pre>" << listIndex(req, serverConf)
+                       << "</pre></body></html>";
     res.setBody(responseBodyStream.str());
     std::cout << res.getBody() << std::endl;
     res.appendHeader("Content-length", TO_STRING(res.getBodySize()));
@@ -213,19 +202,17 @@ HttpResponse createDirectoryResponse(hfs::Path& reqResource,
         return (res);
     }
     indexPath = getindex(reqResource, req, serverConf);
-    std::cout << "go to the index: [" << indexPath.c_str() << "]" <<  std::endl;
+    std::cout << "go to the index: [" << indexPath.c_str() << "]" << std::endl;
     if (indexPath.empty()) {
         if (isAutoIndexEnabled(req, serverConf)) {
             // return (getAutoIndex(req, serverConf));
-            std::cout << "<---------------autoIndexEnalbed---------------->>>" << std::endl;
+            std::cout << "<---------------autoIndexEnalbed---------------->>>"
+                      << std::endl;
             res = getAutoIndex(req, serverConf);
-            std::cout << res.getStatus() << " " << res.getBody() << std::endl;
             return (res);
 
         } else {
-            std::cout << "auto index is off" << std::endl;
-            res.defaultErrorResponse(403);
-            return (res);  // remember to create res inside defaultError
+            return (createErrorPageResponse(serverConf,403));
         }
     } else {
         if (hasCGI(indexPath, serverConf)) {
@@ -235,43 +222,13 @@ HttpResponse createDirectoryResponse(hfs::Path& reqResource,
     }
 }
 
-// hfs::Path getPathRoot(hfs::Path path, servers_it& conf){
-//   string tempPath	 = path.c_str();
-//   string temp	 = path.c_str();
-//   std::cout << "path	== >:" << tempPath << std::endl;
-//   value_t root;
-//   size_t pos		 = 0;
-//   while (!tempPath.empty()){
-//     try {
-//       root		 = conf->at(tempPath).getRoot();
-//       if (tempPath != "/")
-// 	pos		 = tempPath.size();
-//       break;
-//     }catch (std::exception &) {
-//       pos		 = tempPath.find_last_of("/");
-//       tempPath.erase(pos);
-//       if (tempPath.empty()){
-// 	tempPath = "/";
-// 	pos		 = 0;
-//       }
-//       std::cout << "affer earse:" <<  "\"" << tempPath << "\"" << std::endl;
-//       std::cout << "No loaction match!" << std::endl;
-//     }
-//   }
-
-//   path.setPath(temp.replace(0, pos, root));
-//   std::cout << "getPathRoot:" << path.c_str() << std::endl;
-//   return (path);
-// }
-
 HttpResponse HttpMethodProcessor::processGetRequest(HttpRequest& req,
                                                     servers_it& conf_S) {
     http::filesystem::Path requestedResource =
         req.getPathWRoot(req.getPath(), conf_S);
-    std::cout << "begin of processGet Path: " << requestedResource.c_str()
-              << std::endl;
-  
+
     if (!resourceExists(requestedResource)) {
+        std::cout << "generate error page for 404" << std::endl;
         return createErrorPageResponse(conf_S, 404);
     }
 
@@ -286,7 +243,7 @@ HttpResponse HttpMethodProcessor::processGetRequest(HttpRequest& req,
     std::cout << "prepar to inter file response" << std::endl;
     return (createRegularFileResponse(requestedResource, conf_S));
 }
-/*=============================================== delete request =================================*/
+/*=============================================== delete request * =================================*/
 HttpResponse delete_directory_recursive(const char* path,
                                         const servers_it& serverConf) {
     DIR* dir = opendir(path);
@@ -423,33 +380,34 @@ HttpResponse createDirectoryPostResponse(hfs::Path& reqResource,
 bool isLocationAllowUpload(const HttpRequest& req,
                            const servers_it& serverConf) {
     std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+    std::cout << "lcoation of post :" << location << std::endl;
     try {
         if (serverConf->at(location).isAllowed(POST)) return (true);
     } catch (std::exception&) {
     }
     return (false);
 }
-HttpResponse uploadFile(const hfs::Path& requestedResource,
-                        const HttpRequest& req, const servers_it& serverConf) {
+HttpResponse uploadFile(servers_it& serverConf, HttpRequest& req) {
     // if request get the file or check body
-    (void)requestedResource;
-    (void)req;
-    (void)serverConf;
     HttpResponse res;
-    res.defaultErrorResponse(201);
+    if (req.resourceIsCreatedSuccessfully()) {
+        res.defaultErrorResponse(201);
+    } else {
+        return (createErrorPageResponse(serverConf,400));
+    }
     return (res);
 }
 HttpResponse HttpMethodProcessor::processPostRequest(HttpRequest& req,
                                                      servers_it& conf_S) {
+    // If a location supports FastCGI then the request should be redirected to FastCGI.
     hfs::Path requestedResource = req.getPathWRoot(req.getPath(), conf_S);
     if (isLocationAllowUpload(req, conf_S)) {
-        return (uploadFile(requestedResource, req, conf_S));
+        return (uploadFile(conf_S, req));
     } else {
         if (!resourceExists(requestedResource)) {
             return (createErrorPageResponse(conf_S, 404));
         } else if (hfs::isDirectory(requestedResource)) {
-            return (
-                createDirectoryPostResponse(requestedResource, req, conf_S));
+            return (createDirectoryPostResponse(requestedResource, req, conf_S));
         } else if (hasCGI(requestedResource, conf_S)) {
             return executeCGIScriptAndGetResponse(requestedResource, req,
                                                   conf_S);

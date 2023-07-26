@@ -22,7 +22,6 @@ HttpClient::HttpClient(const HttpClient& httpClient) {
 
     std::cout << "HttpClient:: >>> Copy Constructor called\n";
     this->_socket = httpClient.getSocket();
-    // this->conf = new Server(*(httpClient.getConfiguration()));
     _conf = httpClient._conf;
     _isRequestComplete = false;
 }
@@ -31,7 +30,6 @@ HttpClient& HttpClient::operator=(const HttpClient& httpClient) {
     std::cout << "HttpClient::>>> Assignement operator called\n";
     if (this != &httpClient) {
         this->_socket = httpClient.getSocket();
-       // this->conf = new Server(*(httpClient.getConfiguration()));
          _conf = httpClient._conf;
     }
 	return *this;
@@ -48,8 +46,7 @@ HttpClient::HttpClient(servers_it& server, int socket) : _socket(socket) {
 }
 
 HttpClient::~HttpClient(){
-    //delete conf;
-    // std::cout << ">>> Destructor called\n";
+
 }
 
 
@@ -102,28 +99,14 @@ void HttpClient::processRequest(servers_it& conf_S) {
       std::cout <<  "Handle unsupported HTTP method" << std::endl;
     }
   }
-  // if (res.getBody().empty()){
-  //   std::cout << "ready to send file "<< _writingPos << std::endl;
-  //   sendFileResponse(res,_socket);
-  //   std::cout << "_writingPos" << _writingPos << std::endl;
-  //   while (_writingPos > 0){// still confusing is this right 
-  //   std::cout << "_writingPos" << _writingPos << std::endl;
-  //   sendFileResponse(res,_socket);
-  //   }
-
-  // }else{
-  //   std::cout << "normal sendResponse" << std::endl;
-  //   sendResponse();
-  // }
   
 }
 
-int HttpClient::sendResponse(){	//This is unstable, so use it carefully because it might change at any time.
+int HttpClient::sendResponse(){	
   std::cout << "-------sending....---------------" << std::endl;
   sendHeader(res, _socket);
   _isHeaderSent = true;
    int bytesSent =  send(_socket, res.getBody().c_str(), res.getBodySize(), 0);
-  // close(_socket);
   _isRespondComplete = true;
   _isHeaderSent = false;
   return (bytesSent);
@@ -137,13 +120,7 @@ int HttpClient::sendResponse(){	//This is unstable, so use it carefully because 
 servers_it	HttpClient::getConfiguration() const {return _conf;}
 int		HttpClient::getSocket() const {return _socket;}
 
-// void	HttpClient::setConfiguration(Server& server) {conf = server;}
 void	HttpClient::set_socket(int clientSocket) {_socket = clientSocket;}
-
-// void	HttpClient::set_Reading_State(bool state) {_readyTo_Read = state;}
-// void	HttpClient::set_Writing_State(bool state) {_readyTo_Write = state;}
-// bool	HttpClient::ReadyTo_Read() {return _readyTo_Read;}
-// bool	HttpClient::ReadyTo_Write() {return _readyTo_Write;}
 
 
 void	HttpClient::setRespondComplete(bool state) {_isRespondComplete = state;}

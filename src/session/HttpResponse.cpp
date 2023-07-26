@@ -2,6 +2,7 @@
 #include "HttpStatusCodes.hpp"
 #include "fileSystem.hpp"
 #include <sstream>
+#include "utilsFunction.hpp"
 
 HttpResponse::~HttpResponse(void){
 //   std::cout << "response: destructor not implemented yet" << std::endl;
@@ -84,24 +85,12 @@ std::string HttpResponse::getHeaders(){
 }
 
 void HttpResponse::defaultErrorResponse(int status){ 
-   std::stringstream	st;
-   std::string		body;
   this->setStatus(status);
   this->setVersion("HTTP/1.1");
-  this->appendHeader("Content-Type","text/html");
-
-  
-  st << "<!DOCTYPE html><html><head><title>"
-     << status << " " << this->status.getStatusMessage(status)
-     << "</title></head><body><h1><center>"
-     << status << " "
-     << this->status.getStatusMessage(status)
-     << "<hr>"
-     << "</center></h1><p><center>webServer/0.01</center></p></body></html>";
-  body = st.str();
-  this->appendHeader("Content-length", TO_STRING(body.size())); 
-  this->setBody(body);
+  this->appendHeader("Date", getTimeGMT());
+  this->appendHeader("Connection", "keep-alive");
 }
+
 
 
 void HttpResponse::writeHeader(int statu, Smap_t& header){

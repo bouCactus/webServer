@@ -237,15 +237,6 @@ void	HttpServer::checkForReading(fd_set &tempReadfds) {
 			else {
 				/*** Process the received data. ***/
 				buffer[bytesRead] = '\0';
-				// for (int i= 0 ; buffer[i] != '\0' ; i++){
-				// 	if (buffer[i] == '\r')
-				// 		std::cout << "\\r";
-				// 	else if (buffer[i] == '\n')
-				// 		std::cout << "\\n";
-				// 	else
-				// 		std::cout << buffer[i];
-	
-				// }
 				if ((*client)->req.parseRequest(buffer)){
 					servers_it serverConf= (*client)->getConfiguration();
 					(*client)->processRequest(serverConf);
@@ -262,39 +253,6 @@ void	HttpServer::checkForReading(fd_set &tempReadfds) {
 	}
 }
 
-// void	HttpServer::checkForWriting(fd_set &tempWritefds) {
-// 	client_it client = _clients.begin();
-
-// 	for (size_t i = 0; client != _clients.end(); client++, i++) {
-// 		int	clientSocket = (*client)->getSocket();
-// 		if ((*client)->isRequestComplete()){
-// 			if (FD_ISSET(clientSocket, &tempWritefds)) {
-
-// 				/*** Prepare and send a response to the client. ***/
-// 				std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
-
-// 					int bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
-// 					if (bytesSent == -1) {
-// 						std::cerr << "Error sending response to client: " << strerror(errno) << std::endl;
-//         	        	close(clientSocket);
-//         	        	FD_CLR(clientSocket, &readfds);
-//         	        	FD_CLR(clientSocket, &writefds);
-// 					}
-// 					else {
-// 						std::cout << "Response sent to client socket " << clientSocket << std::endl;
-// 						/*** Remove the client and clear his socket from the fd-sets. ***/
-//         	        	close(clientSocket);
-//         	        	FD_CLR(clientSocket, &readfds);
-//         	        	FD_CLR(clientSocket, &writefds);
-// 			    			std::cout << "----------------------------> size Before: " << _clients.size() << std::endl;
-// 			    			std::cout << "----------------------------> size After: " << _clients.size() << std::endl;
-//         	        	if (i+1 == _clients.size()) break;
-// 					}
-
-// 			}
-// 		}
-// 	}
-// }
 void HttpServer::checkForWriting(fd_set &tempWritefds) {
     client_it client = _clients.begin();
     while (client != _clients.end()) {

@@ -66,7 +66,7 @@ typedef  std::string::size_type size_s;
 #define DEF_PORT "80"
 #define DEF_ERR_PAGE "/home/error.html"
 #define DEF_MAX	"10"
-#define DEF_ALLOW 1
+#define DEF_ALLOW 0
 #define DEF_ROOT "/"
 #define DEF_AUTOINDEX 0
 #define DEF_INDEX "index.html"

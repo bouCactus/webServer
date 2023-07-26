@@ -9,7 +9,8 @@ CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address
 OBJ = $(SRCS:.cpp=.o)
 OBJBONUS = $(SRCBONUS:.cpp=.o)
 
-SESSION = HttpClient HttpServer fileSystem HttpResponse HttpRequest HttpMethodProcessor
+SESSION = HttpClient HttpServer fileSystem HttpResponse HttpRequest HttpMethodProcessor \
+		  utilsFunction
 PARSING = confAST confLexer confParser confValidate
 MAIN = main
 
