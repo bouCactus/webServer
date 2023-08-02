@@ -12,6 +12,7 @@ HttpServer& HttpServer::operator=(const HttpServer& httpServer) {
 	return *this;
 }
 
+
 HttpServer::~HttpServer() {
 
 	FD_ZERO(&readfds);
@@ -167,7 +168,6 @@ bool    HttpServer::waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds
 
 	int activity = select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, NULL);
 	if (activity == -1) {
-
         std::cerr << "Error select : \n ";
 		throw HttpError(*this,errno);
 	}
@@ -245,7 +245,6 @@ void	HttpServer::checkForReading(fd_set &tempReadfds) {
 					FD_CLR(clientSocket, &readfds);
 					FD_SET(clientSocket, &writefds);
 				}
-				
 				/*** Add the client socket to the write file descriptor set for response. ***/
 			}
 		}

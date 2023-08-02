@@ -181,6 +181,18 @@ void Parser::validate_cgi(values_t			values){
 	std::string err;
 	if (_currentBlock == SERVER)
 		{ LOG_THROW(); throw Parse_error(err + "unexpected autoindex directive in server block"); }
+	
+	// check if the syntax of cgi lists are correct!!
+	
+	// if (values.size() != 1)
+	// {
+	// 	{ LOG_THROW(); throw Parse_error("cgi_pass should have only one value."); }
+	// }
+	// values_it it = values.begin();
+	// if (*it != "phpfpm")
+	// {
+	// 	LOG_THROW(); throw Parse_error("CGI is not allowed!");
+	// }
 };	
 
 /**
@@ -222,7 +234,7 @@ void Parser::validate_cgi_allow(values_t	values){
 	values_it it = values.begin();
 	for (; it != values.end(); it++)
 	{
-		if (*it != "GET" && *it != "POST" && *it != "DELETE")
+		if (*it != "GET" && *it != "POST")
 			{ LOG_THROW(); throw Parse_error(err + "unkonwn " + *it + " method."); }
 	}
 };

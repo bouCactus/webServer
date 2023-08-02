@@ -38,7 +38,7 @@ public:
   }
   void closeFile();
   std::string getMethod();
-  http::filesystem::Path getPath()const;
+  http::filesystem::Path getPath() const;
   std::string getVersion();
   std::string findlocationOfUrl(const hfs::Path&	path,
 					     const servers_it& conf)const;

@@ -243,3 +243,38 @@ values_t        Location::getIndex(){
 	return it->second;
 };
 
+
+strPair_t   Location::getCGI(){
+	directives_it it = _directives.find("cgi_pass");
+	strPair_t cgiList;
+	if (it == _directives.end())
+	{
+		return (cgiList);
+	}
+	values_it val = (it->second).begin(); 
+	for(; val != (it->second).end(); val++)
+	{
+		std::string key, value;
+		size_t p = (*val).find(":");
+		// we made a assemption that that value is correct.
+		key = (*val).substr(0, p);
+		value = (*val).substr(++p);
+		cgiList[key] = value;
+	}
+	return cgiList;
+}
+
+
+bool	Location::isCGIAllowed(Req req){
+	directives_it it = _directives.find("cgi_allow");
+	std::string method;
+
+	if (it == _directives.end())
+		return (false);
+	if (req == POST) method = "POST";
+	if (req == GET) method = "GET";
+	values_it v_it = it->second.find(method);
+	if (v_it == it->second.end())
+		return false;
+	return true;
+};

@@ -1,4 +1,3 @@
-
 #include "HttpMethodProcessor.hpp"
 
 #include <dirent.h>
@@ -79,32 +78,69 @@ HttpResponse createRegularFileResponse(Path& reqResource,
     std::cout << "request leaving createRegularFileResponse" << std::endl;
     return (res);
 }
+
 Location getLocationOfFastCGIextension(Path& requestFile,
                                        const servers_it& serverConf) {
+
     if (!requestFile.has_extension()) {
         LOG_THROW();
         throw std::exception();
     }
+    
+    std::cout << "i need location that linked to : " << requestFile.c_str() << "\n";
+    std::cout << "root_name : " << requestFile.c_str() << "\n";
     std::string requestFileExtension = requestFile.extension();
     std::string locationName = "." + requestFileExtension + "$";
+    std::cout << "--- Looking for: " << locationName << "\n"; 
     Location location = serverConf->at(locationName);
     return (location);
 }
 
-bool hasCGI(Path& reqResource, const servers_it& serverConf) {
-    try {
-        getLocationOfFastCGIextension(reqResource, serverConf);
-        return (true);
-    } catch (...) {
-        return (false);
-    }
+bool hasCGI(hfs::Path& path, const HttpRequest& req, const servers_it& serverConf) {
+
+
+    // list of cgi in the this location
+    std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+    Location l = serverConf->at(location);
+    strPair_t CGIList = l.getCGI();
+    if (CGIList.size() == 0) return false;
+
+    std::cout << "check for : " << path.extension() << "\n";
+    strPair_it it = CGIList.find(path.extension());
+    if (it == CGIList.end()) return false;
+    std::cout << "CGI You are looking for is : " << it->second << "\n";
+    return true;
+    // strPair_it it =  CGIList.begin();
+    // for(; it != CGIList.end(); it++){
+    //     std::cout << it->first << " | " << it->second << "\n";
+    // }
+    // (void) req;
+    // (void) serverConf;
+    // return true;
+    // std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+    // Location l = serverConf->at(location);
+    // if (l.getCGI() == "") return false;
+    // return true;
+    // try {
+    //     std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+    //     Location l = serverConf->at(location);
+    //     std::cout << "checking CGI...!!\n";
+    //     getLocationOfFastCGIextension(reqResource, serverConf);
+    //     return (true);
+    // } catch (...) {
+    //     return (false);
+    // }
 }
 
 HttpResponse executeCGIScriptAndGetResponse(const Path& reqResource,
                                             const HttpRequest& req,
                                             const servers_it& serverConf) {
     std::cout << "CGI Script not implemented yet" << std::endl;
-    HttpResponse res;
+    
+        HttpResponse res;
+    std::string ff("/Users/amaarifa/Desktop/WebServerCPP/www/hi/index.php");
+    res.setFilename(http::filesystem::Path(ff));
+    res.setStatus(200);
     (void)reqResource;
     (void)serverConf;
     (void)req;
@@ -215,7 +251,7 @@ HttpResponse createDirectoryResponse(hfs::Path& reqResource,
             return (createErrorPageResponse(serverConf,403));
         }
     } else {
-        if (hasCGI(indexPath, serverConf)) {
+        if (hasCGI(indexPath, req, serverConf)) {
             return executeCGIScriptAndGetResponse(indexPath, req, serverConf);
         }
         return (createRegularFileResponse(indexPath, serverConf));
@@ -237,7 +273,7 @@ HttpResponse HttpMethodProcessor::processGetRequest(HttpRequest& req,
         return createDirectoryResponse(requestedResource, req, conf_S);
     }
 
-    else if (hasCGI(requestedResource, conf_S)) {
+    else if (hasCGI(requestedResource, req, conf_S)) {
         return executeCGIScriptAndGetResponse(requestedResource, req, conf_S);
     }
     std::cout << "prepar to inter file response" << std::endl;
@@ -319,7 +355,7 @@ HttpResponse createDeleteDirectoryResponse(hfs::Path& reqResource,
         // return (res);
         return (createErrorPageResponse(serverConf, 409));
     }
-    if (hasCGI(reqResource, serverConf)) {
+    if (hasCGI(indexPath, req, serverConf)) {
         hfs::Path index = getindex(reqResource, req, serverConf);
         if (index.empty()) {
             // return (res.defaultErrorResponse(403));
@@ -332,7 +368,7 @@ HttpResponse createDeleteDirectoryResponse(hfs::Path& reqResource,
 HttpResponse createDeleteRegularFileResponse(hfs::Path& path,
                                              const HttpRequest& req,
                                              const servers_it& serverConf) {
-    if (hasCGI(path, serverConf))
+    if (hasCGI(path, req, serverConf))
         return (executeCGIScriptAndGetResponse(path, req, serverConf));
     if (remove(path.c_str()) != 0) {
         // return defaultResponse(500); // Internal Server Error
@@ -349,7 +385,7 @@ HttpResponse HttpMethodProcessor::processDeleteRequest(HttpRequest& req,
     } else if (http::filesystem::isDirectory(requestedResource)) {
         std::cout << "-----inside directory--------" << std::endl;
         return createDeleteDirectoryResponse(requestedResource, req, conf_S);
-    } else if (hasCGI(requestedResource, conf_S)) {
+    } else if (hasCGI(requestedResource, req, conf_S)) {
         return executeCGIScriptAndGetResponse(requestedResource, req, conf_S);
     }
     std::cout << "prepar to inter file response" << std::endl;
@@ -371,7 +407,7 @@ HttpResponse createDirectoryPostResponse(hfs::Path& reqResource,
     if (indexPath.empty()) {
         return createErrorPageResponse(serverConf, 403);
     } else {
-        if (hasCGI(indexPath, serverConf)) {
+        if (hasCGI(indexPath, req, serverConf)) {
             return executeCGIScriptAndGetResponse(indexPath, req, serverConf);
         }
         return (createErrorPageResponse(serverConf, 403));
@@ -408,7 +444,7 @@ HttpResponse HttpMethodProcessor::processPostRequest(HttpRequest& req,
             return (createErrorPageResponse(conf_S, 404));
         } else if (hfs::isDirectory(requestedResource)) {
             return (createDirectoryPostResponse(requestedResource, req, conf_S));
-        } else if (hasCGI(requestedResource, conf_S)) {
+        } else if (hasCGI(requestedResource, req, conf_S)) {
             return executeCGIScriptAndGetResponse(requestedResource, req,
                                                   conf_S);
         }

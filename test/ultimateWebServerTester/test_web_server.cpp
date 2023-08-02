@@ -270,7 +270,7 @@ TEST_CASE("Test HTTP GET Request", "[http]") {
                 std::string url = "http://localhost:8080/";
                 ResponseData response = PerformHttpGet(url);
                 REQUIRE_FALSE(response.body.empty());
-            });
+    });
     }
 
     // Wait for all threads to finish

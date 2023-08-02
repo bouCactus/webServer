@@ -7,22 +7,38 @@
 #include <time.h>
 
 using std::string;
+
 using http::filesystem::Path;
+
 namespace hfs = http::filesystem;
+
 http::filesystem::Path::Path(){
-}
-http::filesystem::Path::~Path(){
-}
-http::filesystem::Path::Path(string& path): _path(path){
+
+
 }
 
-http::filesystem::Path::Path(const Path& other) : _path(other._path) {
+http::filesystem::Path::~Path(){
+}
+
+void http::filesystem::Path::setQuery(std::string query) {
+  if (query.empty()) return;
+  _queryString = query;
+  std::cout << "set query to : " << query << "\n";
+};
+
+http::filesystem::Path::Path(string& path): _path(path){
+  setPath(path);
+}
+
+http::filesystem::Path::Path(const Path& other) {
+  *this = other;
   // No need to call the assignment operator, directly initialize _path
 }
 
 Path& http::filesystem::Path::operator=(const Path& other) {
   if (this != &other) {
     _path = other._path;
+    _queryString = other._queryString;
   }
   return *this;
 }
@@ -40,6 +56,7 @@ const char* http::filesystem::Path::c_str() const{
 }
 
 string http::filesystem::Path::root_name(){ return ("");}
+
 string http::filesystem::Path::root_directory(){
   if (_path[0] == '/')
     return (_path.substr(0, 0));
@@ -69,8 +86,11 @@ string http::filesystem::Path::filename(){
   std::size_t found;
 
   found = _path.find_last_of("/");
+  
+
   return (_path.substr(found + 1));
 }
+
 
 string http::filesystem::Path::stem(){
   std::size_t found, foundextension;
@@ -83,6 +103,7 @@ string http::filesystem::Path::stem(){
 
 string http::filesystem::Path::extension(){
   std::size_t found = _path.find_last_of(".");
+  if (found == std::string::npos) return ("");
   return (_path.substr(found + 1));
 }
 
@@ -159,6 +180,7 @@ bool      http::filesystem::isRegular_file(const Path& path){
 
 bool      http::filesystem::isExests(const Path& path){
   struct stat s;
+  std::cout << " the file looking for  is " << path.c_str() << "\n";
   return (stat (path.c_str(), &s) == 0);
 }
 
@@ -214,9 +236,19 @@ file_type http::filesystem::type(const Path& path){
 }
 
 void http::filesystem::Path::setPath(string path){
-  _path = path;  
+  size_t p = path.find_last_of("?");
+  if (p != std::string::npos)
+  {
+    _path = path.substr(0, p);
+    setQuery(path.substr(p, path.size()));
+  }
+  else 
+    _path = path;
 }
 
+std::string http::filesystem::Path::getQueryString() const {
+  return _queryString;
+}
 
 size_t http::filesystem::fileSize(const Path& path){
   struct stat s;

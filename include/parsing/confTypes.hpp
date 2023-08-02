@@ -34,6 +34,7 @@ enum Req {
 	DELETE,
 };
 
+
 // key and values for each directive
 typedef std::string value_t;
 typedef std::set<std::string> values_t;
@@ -60,7 +61,8 @@ typedef servers_t::iterator     servers_it;
 // size
 typedef  std::string::size_type size_s;
 
-
+typedef std::map<std::string, std::string> strPair_t;
+typedef strPair_t::iterator strPair_it;
 
 #define DEF_HOST "127.0.0.1"
 #define DEF_PORT "80"
@@ -70,7 +72,6 @@ typedef  std::string::size_type size_s;
 #define DEF_ROOT "/"
 #define DEF_AUTOINDEX 0
 #define DEF_INDEX "index.html"
-
 #ifndef DEBUG
 #define DEBUG 1
 #endif

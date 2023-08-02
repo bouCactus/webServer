@@ -3,6 +3,8 @@
 
 #include	<iostream>
 #include <string>
+#include <map>
+
 using	std::string; 
 
     enum  file_type {
@@ -43,9 +45,10 @@ namespace http{
       bool	has_extension();
       bool      endswith(char del) const ;
       void	setPath(string path);
+      void  setQuery(string query);
       bool      empty()const;
       void      appendFile(const string fileName);
-
+      std::string getQueryString() const;
       Path();
       ~Path();
       Path(string& path);
@@ -53,6 +56,8 @@ namespace http{
       Path&	operator = (const Path& other);
     private:
       string	_path;
+      string  _queryString;
+      std::map<std::string, std::string> query;
     };
     /*
       Constant 	| Meaning

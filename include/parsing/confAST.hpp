@@ -5,6 +5,8 @@
 
 
 
+
+
 class Location {
     private:
         directives_t    _directives;
@@ -15,7 +17,8 @@ class Location {
         value_t         getRoot();
         bool            isAutoIndex();
         values_t        getIndex();
-
+        strPair_t         getCGI();
+        bool            isCGIAllowed(Req req);
 };
 
 class Server {
