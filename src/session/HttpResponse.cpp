@@ -3,9 +3,13 @@
 #include "fileSystem.hpp"
 #include <sstream>
 #include "utilsFunction.hpp"
+#include <unistd.h>
 
 HttpResponse::~HttpResponse(void){
 //   std::cout << "response: destructor not implemented yet" << std::endl;
+  //close(_CGIFile.first);
+  //unlink(_CGIFile.second.c_str());
+  std::cout << "res end here-----*\n";
 }
 
 HttpResponse::HttpResponse(const HttpResponse &other){
@@ -20,12 +24,33 @@ HttpResponse &HttpResponse::operator = (const HttpResponse &other){
     _version			     = other._version;
     _date			     = other._date;
     _body			     = other._body;
+    _CGIFile        = other._CGIFile;
+    _proccessPID    = other._proccessPID;
   }
   return *this;
 }
 
+void HttpResponse::setCGIFile(int fd, std::string path) {
+  _CGIFile.first = fd;
+  _CGIFile.second = path;
+};
+
+std::pair<int, std::string> HttpResponse::getCGIFile() {
+  return _CGIFile;
+};
+
+void HttpResponse::setProccessPID(int pid)
+{
+  _proccessPID = pid;
+}
+
+int HttpResponse::getProccessPID() {
+  return (_proccessPID);
+}
+
 HttpResponse::HttpResponse(){
   this->_status = HttpStatusCodes::HttpStatusCodes::HTTP_OK;
+  _proccessPID = -1;
 }
 HttpResponse::HttpResponse(int statusCode){
  this->_status = statusCode;

@@ -2,9 +2,11 @@
 #define __HTTPRESPONSE__H_
 
 #include <netinet/in.h>
+#include <string>
 #include <unistd.h>
 
 #include <map>
+#include <utility>
 
 #include "HttpRequest.hpp"
 #include "HttpStatusCodes.hpp"
@@ -41,7 +43,11 @@ class HttpResponse {
     std::string getHeaders();
     void defaultErrorResponse(int status);
     void writeHeader(int satuts, Smap_t &header);
-
+    void setCGIFile(int fd, std::string path);
+    void clean();
+    std::pair<int, std::string> getCGIFile();
+    int getProccessPID();
+    void setProccessPID(int pid);
    private:
     Smap_t _headers;
     http::filesystem::Path _fileName;
@@ -49,6 +55,8 @@ class HttpResponse {
     std::string _version;
     std::string _date;
     std::string _body;
+    std::pair<int, std::string> _CGIFile;
+    int _proccessPID;
 };
 #endif  // __THHPRESPONSE__H_
 

@@ -31,7 +31,7 @@ namespace http{
       string	parent_path();
       string	filename();
       string	stem();
-      string	extension();
+      string	extension() const;
       
 
 

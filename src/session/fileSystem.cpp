@@ -101,7 +101,7 @@ string http::filesystem::Path::stem(){
   return (tem.substr(0, foundextension));
 }
 
-string http::filesystem::Path::extension(){
+string http::filesystem::Path::extension() const{
   std::size_t found = _path.find_last_of(".");
   if (found == std::string::npos) return ("");
   return (_path.substr(found + 1));

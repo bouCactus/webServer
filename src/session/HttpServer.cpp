@@ -274,9 +274,12 @@ void HttpServer::checkForWriting(fd_set &tempWritefds) {
                 FD_CLR(clientSocket, &writefds);
             } else {
                 // Remove the client and clear its socket from the fd-sets.
-				if ((*client)->isRespondComplete()){
+				if ((*client)->isRespondComplete() && (*client)->res.getProccessPID() == -1){
+
                 std::cout << "Response sent to client socket and delete " << clientSocket << std::endl;
-                close(clientSocket);
+				std::cout << "Going to delete: " << (*client)->res.getCGIFile().second << "\n";
+				(*client)->res.clean();
+				close(clientSocket);
                 FD_CLR(clientSocket, &readfds);
                 FD_CLR(clientSocket, &writefds);
                 

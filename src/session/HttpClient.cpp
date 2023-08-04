@@ -16,7 +16,12 @@ int sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated thing
   return send(_socket, content.c_str(), content.size(), 0);
 }
 
-
+void HttpResponse::clean() {
+  // close the temp file of CGI if there is one.
+  close(getCGIFile().first);
+  if (!getCGIFile().second.empty())
+    unlink(getCGIFile().second.c_str());
+}
 
 HttpClient::HttpClient(const HttpClient& httpClient) {
 
@@ -90,11 +95,11 @@ void HttpClient::processRequest(servers_it& conf_S) {
   HttpMethodProcessor	method;
   if (!_isHeaderSent){
     if (req.getMethod()	== "GET") {
-      res	= method.processGetRequest(this->req , conf_S);
+      method.processGetRequest(this->req, conf_S, this->res);
     } else if (req.getMethod() == "POST") {
-      res			= method.processPostRequest(this->req , conf_S);
+      method.processPostRequest(this->req , conf_S, this->res);
     } else if (req.getMethod() == "DELETE") {
-      res			= method.processDeleteRequest(this->req , conf_S);
+      method.processDeleteRequest(this->req , conf_S, this->res);
     } else {
       std::cout <<  "Handle unsupported HTTP method" << std::endl;
     }

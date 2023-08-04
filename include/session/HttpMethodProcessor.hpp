@@ -7,9 +7,9 @@
 class HttpMethodProcessor{
 public:
   
-  HttpResponse processGetRequest(HttpRequest& req , servers_it& conf_S);
-  HttpResponse processPostRequest(HttpRequest& req , servers_it& conf_S);
-  HttpResponse processDeleteRequest(HttpRequest& req , servers_it& conf_S);
+  void processGetRequest(HttpRequest& req , servers_it& conf_S, HttpResponse &res);
+  void processPostRequest(HttpRequest& req , servers_it& conf_S, HttpResponse &res);
+  void processDeleteRequest(HttpRequest& req , servers_it& conf_S, HttpResponse &res);
 
 private:
 

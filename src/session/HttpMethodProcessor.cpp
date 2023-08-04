@@ -1,23 +1,31 @@
 #include "HttpMethodProcessor.hpp"
 
+#include <cstddef>
 #include <dirent.h>
+#include <sys/fcntl.h>
 #include <sys/stat.h>
 
 #include <ctime>
 #include <string>
+#include "confTypes.hpp"
 #include "utilsFunction.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "confAST.hpp"
 #include "fileSystem.hpp"
+#include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <ctime>
+#include <sstream>
 
 using http::filesystem::Path;
 namespace hfs = http::filesystem;
 
 bool resourceExists(Path& reqResource) { return (hfs::isExests(reqResource)); }
-HttpResponse createErrorPageResponse(const servers_it& serverConf,
-                                     const int statCode) {
-    HttpResponse res;
+void createErrorPageResponse(const servers_it& serverConf,
+                                     const int statCode, HttpResponse &res) {
     (void)(serverConf);
     // i don't know how to use this getServerNames is it set of names, how
     //serverConf->getServerNames();
@@ -131,19 +139,53 @@ bool hasCGI(hfs::Path& path, const HttpRequest& req, const servers_it& serverCon
     //     return (false);
     // }
 }
+extern char **environ;
+
+void setEnv(const Path &reqResource) {
+    setenv("SCRIPT_FILENAME", reqResource.c_str(), 1);
+}
+
+std::string generateUniqueName(){
+    std::string fileName;
+    std::stringstream s(fileName);
+    s << time(0);
+    s >> fileName;
+    return ("CGI_temp_" + fileName);
+}
 
 HttpResponse executeCGIScriptAndGetResponse(const Path& reqResource,
                                             const HttpRequest& req,
-                                            const servers_it& serverConf) {
+                                            const servers_it& serverConf,
+                                            HttpResponse &res) {
     std::cout << "CGI Script not implemented yet" << std::endl;
     
-        HttpResponse res;
-    std::string ff("/Users/amaarifa/Desktop/WebServerCPP/www/hi/index.php");
-    res.setFilename(http::filesystem::Path(ff));
+    //HttpResponse res;
+
+    std::cout << "file to be execute = " << reqResource.c_str() << "\n";
+    std::string fileName = generateUniqueName();
+    int fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0777);
+    std::cout << "file create: " << fileName <<"\n";
+    // 2. execute the script and save the output in that file.
+    
+    int pid = fork();
+    if (pid == 0)
+    {
+        // setting the envirement 
+        setEnv(reqResource);
+        char **env = environ;
+        // I NEED TO PROTECT THIS !!
+        std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+        Location CGILocation = serverConf->at(location);
+        strPair_t CGIList = CGILocation.getCGI();
+        std::string CGIScript = CGIList[reqResource.extension()];
+        std::cout << "you CGI script is : " << CGIScript << "\n";
+        dup2(fd, 1);
+        execve(CGIScript.c_str(), NULL, env);
+    }
+    waitpid(pid, NULL, WNOHANG);
+    res.setCGIFile(fd, fileName);
+    res.setFilename(http::filesystem::Path(fileName));
     res.setStatus(200);
-    (void)reqResource;
-    (void)serverConf;
-    (void)req;
     return (res);
 }
 
@@ -252,32 +294,35 @@ HttpResponse createDirectoryResponse(hfs::Path& reqResource,
         }
     } else {
         if (hasCGI(indexPath, req, serverConf)) {
-            return executeCGIScriptAndGetResponse(indexPath, req, serverConf);
+            return executeCGIScriptAndGetResponse(indexPath, req, serverConf, res);
         }
         return (createRegularFileResponse(indexPath, serverConf));
     }
 }
 
-HttpResponse HttpMethodProcessor::processGetRequest(HttpRequest& req,
-                                                    servers_it& conf_S) {
+void HttpMethodProcessor::processGetRequest(HttpRequest& req,
+                                                    servers_it& conf_S, HttpResponse &res) {
     http::filesystem::Path requestedResource =
         req.getPathWRoot(req.getPath(), conf_S);
 
     if (!resourceExists(requestedResource)) {
         std::cout << "generate error page for 404" << std::endl;
-        return createErrorPageResponse(conf_S, 404);
+        res = createErrorPageResponse(conf_S, 404);
+        return ; 
     }
 
     else if (http::filesystem::isDirectory(requestedResource)) {
         std::cout << "-----inside directory--------" << std::endl;
-        return createDirectoryResponse(requestedResource, req, conf_S);
+        res = createDirectoryResponse(requestedResource, req, conf_S);
+        return; 
     }
 
     else if (hasCGI(requestedResource, req, conf_S)) {
-        return executeCGIScriptAndGetResponse(requestedResource, req, conf_S);
+        executeCGIScriptAndGetResponse(requestedResource, req, conf_S, res);
+        return; 
     }
     std::cout << "prepar to inter file response" << std::endl;
-    return (createRegularFileResponse(requestedResource, conf_S));
+    res = createRegularFileResponse(requestedResource, conf_S);
 }
 /*=============================================== delete request * =================================*/
 HttpResponse delete_directory_recursive(const char* path,
@@ -361,7 +406,7 @@ HttpResponse createDeleteDirectoryResponse(hfs::Path& reqResource,
             // return (res.defaultErrorResponse(403));
             return createErrorPageResponse(serverConf, 403);
         }
-        return executeCGIScriptAndGetResponse(indexPath, req, serverConf);
+        return executeCGIScriptAndGetResponse(indexPath, req, serverConf, res);
     }
     return (createDeleteDirectoryContent(reqResource, serverConf));
 }
@@ -369,7 +414,7 @@ HttpResponse createDeleteRegularFileResponse(hfs::Path& path,
                                              const HttpRequest& req,
                                              const servers_it& serverConf) {
     if (hasCGI(path, req, serverConf))
-        return (executeCGIScriptAndGetResponse(path, req, serverConf));
+        return (executeCGIScriptAndGetResponse(path, req, serverConf, res));
     if (remove(path.c_str()) != 0) {
         // return defaultResponse(500); // Internal Server Error
         return createErrorPageResponse(serverConf, 500);
@@ -377,19 +422,23 @@ HttpResponse createDeleteRegularFileResponse(hfs::Path& path,
     // return defaultResponse(204); // No Content
     return createErrorPageResponse(serverConf, 204);
 }
-HttpResponse HttpMethodProcessor::processDeleteRequest(HttpRequest& req,
-                                                       servers_it& conf_S) {
+void HttpMethodProcessor::processDeleteRequest(HttpRequest& req,
+                                                       servers_it& conf_S, HttpResponse &res) {
     hfs::Path requestedResource = req.getPathWRoot(req.getPath(), conf_S);
     if (!resourceExists(requestedResource)) {
-        return createErrorPageResponse(conf_S, 404);
+        res = createErrorPageResponse(conf_S, 404);
+        return ; 
     } else if (http::filesystem::isDirectory(requestedResource)) {
         std::cout << "-----inside directory--------" << std::endl;
-        return createDeleteDirectoryResponse(requestedResource, req, conf_S);
+        res = createDeleteDirectoryResponse(requestedResource, req, conf_S);
+        return ; 
     } else if (hasCGI(requestedResource, req, conf_S)) {
-        return executeCGIScriptAndGetResponse(requestedResource, req, conf_S);
+        res = executeCGIScriptAndGetResponse(requestedResource, req, conf_S, res);
+        return ; 
     }
     std::cout << "prepar to inter file response" << std::endl;
-    return (createDeleteRegularFileResponse(requestedResource, req, conf_S));
+    res = (createDeleteRegularFileResponse(requestedResource, req, conf_S));
+    return ; 
 }
 // #-----------------------------------------------post--------------------------------------#//
 
@@ -408,7 +457,7 @@ HttpResponse createDirectoryPostResponse(hfs::Path& reqResource,
         return createErrorPageResponse(serverConf, 403);
     } else {
         if (hasCGI(indexPath, req, serverConf)) {
-            return executeCGIScriptAndGetResponse(indexPath, req, serverConf);
+            return executeCGIScriptAndGetResponse(indexPath, req, serverConf, res);
         }
         return (createErrorPageResponse(serverConf, 403));
     }
@@ -423,31 +472,34 @@ bool isLocationAllowUpload(const HttpRequest& req,
     }
     return (false);
 }
-HttpResponse uploadFile(servers_it& serverConf, HttpRequest& req) {
+void uploadFile(servers_it& serverConf, HttpRequest& req, HttpResponse &res) {
     // if request get the file or check body
-    HttpResponse res;
     if (req.resourceIsCreatedSuccessfully()) {
         res.defaultErrorResponse(201);
     } else {
-        return (createErrorPageResponse(serverConf,400));
+        createErrorPageResponse(serverConf,400, res);
     }
-    return (res);
 }
-HttpResponse HttpMethodProcessor::processPostRequest(HttpRequest& req,
-                                                     servers_it& conf_S) {
+void HttpMethodProcessor::processPostRequest(HttpRequest& req,
+                                                     servers_it& conf_S, HttpResponse &res) {
     // If a location supports FastCGI then the request should be redirected to FastCGI.
     hfs::Path requestedResource = req.getPathWRoot(req.getPath(), conf_S);
     if (isLocationAllowUpload(req, conf_S)) {
-        return (uploadFile(conf_S, req));
+        uploadFile(conf_S, req, res);
+        return ;
     } else {
         if (!resourceExists(requestedResource)) {
-            return (createErrorPageResponse(conf_S, 404));
+            res = (createErrorPageResponse(conf_S, 404, res));
+            return ; 
         } else if (hfs::isDirectory(requestedResource)) {
-            return (createDirectoryPostResponse(requestedResource, req, conf_S));
+            res = (createDirectoryPostResponse(requestedResource, req, conf_S));
+            return ; 
         } else if (hasCGI(requestedResource, req, conf_S)) {
-            return executeCGIScriptAndGetResponse(requestedResource, req,
-                                                  conf_S);
+            executeCGIScriptAndGetResponse(requestedResource, req,
+                                                  conf_S, res);
+            return;
         }
-        return (createErrorPageResponse(conf_S, 403));
+        res = (createErrorPageResponse(conf_S, 403, res));
+        return ;
     }
 }
