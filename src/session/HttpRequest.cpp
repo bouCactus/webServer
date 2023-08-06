@@ -17,6 +17,10 @@ HttpRequest::~HttpRequest(void) {
     }
 }
 
+std::map<std::string, std::string> &HttpRequest::getHeaders() {
+    return headers;
+}
+
 HttpRequest::HttpRequest(const HttpRequest& other) {
     //   std::cout << "Resquest: copy consturctor not implemented yet" <<
     //   std::endl;

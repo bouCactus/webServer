@@ -3,8 +3,9 @@
 
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
-#include "HttpMethodProcessor.hpp"
+
 #include "confAST.hpp"
+#include "fileSystem.hpp"
 #include <fstream>
 
 class HttpClient{
@@ -42,7 +43,9 @@ class HttpClient{
 		// void	set_Writing_State(bool state);
 		// bool	ReadyTo_Read();
 		// bool	ReadyTo_Write();
-
+		void clean();
+		void setIndexPath(hfs::Path &path);
+		hfs::Path &getIndexPath();
 	private:
 		servers_it		_conf;
 		int				_socket;
@@ -52,6 +55,7 @@ class HttpClient{
   		bool 			_isHeaderSent;
   		std::streamsize _writingPos;
 		bool 			_isRequestComplete;
+		hfs::Path	    _indexPath;
 };
 
 int sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated things */);

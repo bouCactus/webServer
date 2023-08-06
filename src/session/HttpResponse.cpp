@@ -12,6 +12,13 @@ HttpResponse::~HttpResponse(void){
   std::cout << "res end here-----*\n";
 }
 
+void HttpResponse::clean() {
+  // close the temp file of CGI if there is one.
+  close(getCGIFile().first);
+  if (!getCGIFile().second.empty())
+    unlink(getCGIFile().second.c_str());
+}
+
 HttpResponse::HttpResponse(const HttpResponse &other){
     // std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;
@@ -51,6 +58,10 @@ int HttpResponse::getProccessPID() {
 HttpResponse::HttpResponse(){
   this->_status = HttpStatusCodes::HttpStatusCodes::HTTP_OK;
   _proccessPID = -1;
+  // the problem was in version this because something happened to response and he lose it
+ // i think you call this constructor
+ // i add this line 
+   this->_version = "HTTP/1.1";
 }
 HttpResponse::HttpResponse(int statusCode){
  this->_status = statusCode;

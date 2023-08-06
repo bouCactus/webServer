@@ -10,7 +10,7 @@ Parser::Parser(std::string path)
 	_lxr = new Lexer(path);
 	_currentBlock = SERVER;
 };
-
+ 
 
 /**
  * @brief   Check if the value is inserted in [values].

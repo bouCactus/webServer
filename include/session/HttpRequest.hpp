@@ -54,6 +54,7 @@ public:
   bool getHeaderProcessed(){
     return (_headersProcessed);
   }
+  std::map<std::string, std::string> &getHeaders();
 private:
   std::string                       _method;
   http::filesystem::Path            _path; // this a class which deal with proning staff of path

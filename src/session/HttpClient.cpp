@@ -4,24 +4,23 @@
 #include "HttpMethodProcessor.hpp"
 #include <unistd.h>
 #include <netinet/in.h>
+#include <signal.h>
 
 #include <fstream>
 int sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated things */){
   std::stringstream	st;
   std::string		content;
-
+  std::cout << "----------------->" << "\"" << res.getVersion() << "\"" << std::endl;
   st << res.getVersion() << " " << res.getStatus() << " " << res.status.getStatusMessage(res.getStatus()) << "\r\n"
      << res.getHeaders() << "\r\n";
   content = st.str();
   return send(_socket, content.c_str(), content.size(), 0);
 }
 
-void HttpResponse::clean() {
-  // close the temp file of CGI if there is one.
-  close(getCGIFile().first);
-  if (!getCGIFile().second.empty())
-    unlink(getCGIFile().second.c_str());
+void HttpClient::setIndexPath(hfs::Path &path){
+  _indexPath = path;
 }
+hfs::Path &HttpClient::getIndexPath(){ return _indexPath;}
 
 HttpClient::HttpClient(const HttpClient& httpClient) {
 
@@ -29,6 +28,7 @@ HttpClient::HttpClient(const HttpClient& httpClient) {
     this->_socket = httpClient.getSocket();
     _conf = httpClient._conf;
     _isRequestComplete = false;
+    _isRespondComplete = false;
 }
 
 HttpClient& HttpClient::operator=(const HttpClient& httpClient) {
@@ -50,8 +50,14 @@ HttpClient::HttpClient(servers_it& server, int socket) : _socket(socket) {
     
 }
 
+void HttpClient::clean(){
+  if (this->res.getProccessPID() != -1)
+    kill(this->res.getProccessPID(), SIGKILL);
+  this->res.clean();
+}
 HttpClient::~HttpClient(){
-
+  clean();
+  std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
 }
 
 
@@ -65,11 +71,13 @@ int HttpClient::sendFileResponse(HttpResponse& res, int socket/*just to test*/)
   int bytesSent;
   if (!file.is_open()){
     res.setBody("error open file");	// you should replace with error page
-    bytesSent =  send(socket, res.getBody().c_str(), res.getBody().size(), 0);      
+    bytesSent =  send(socket, res.getBody().c_str(), res.getBody().size(), 0);
+ 
   }
   if (!_isHeaderSent){
     bytesSent = sendHeader(res, socket);
     _isHeaderSent = true;
+
   }
   file.seekg(_writingPos);
   std::streamsize	size = 1024;
@@ -95,16 +103,15 @@ void HttpClient::processRequest(servers_it& conf_S) {
   HttpMethodProcessor	method;
   if (!_isHeaderSent){
     if (req.getMethod()	== "GET") {
-      method.processGetRequest(this->req, conf_S, this->res);
+      method.processGetRequest(*this, conf_S);
     } else if (req.getMethod() == "POST") {
-      method.processPostRequest(this->req , conf_S, this->res);
+      method.processPostRequest(*this, conf_S);
     } else if (req.getMethod() == "DELETE") {
-      method.processDeleteRequest(this->req , conf_S, this->res);
+      method.processDeleteRequest(*this, conf_S);
     } else {
       std::cout <<  "Handle unsupported HTTP method" << std::endl;
     }
   }
-  
 }
 
 int HttpClient::sendResponse(){	

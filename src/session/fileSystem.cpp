@@ -199,6 +199,7 @@ bool      http::filesystem::isIndexExests(const Path& dirPath, const string& fil
   while ((dp = readdir (dir)) != NULL) {
 
     if (filename == dp->d_name){
+      //close the open directory
       return (true);
     }
   }
@@ -240,7 +241,7 @@ void http::filesystem::Path::setPath(string path){
   if (p != std::string::npos)
   {
     _path = path.substr(0, p);
-    setQuery(path.substr(p, path.size()));
+    setQuery(path.substr(p+1, path.size()));
   }
   else 
     _path = path;

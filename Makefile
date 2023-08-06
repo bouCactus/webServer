@@ -10,7 +10,7 @@ OBJ = $(SRCS:.cpp=.o)
 OBJBONUS = $(SRCBONUS:.cpp=.o)
 
 SESSION = HttpClient HttpServer fileSystem HttpResponse HttpRequest HttpMethodProcessor \
-		  utilsFunction
+		  utilsFunction HttpMethodHelpers CGI
 PARSING = confAST confLexer confParser confValidate
 MAIN = main
 
