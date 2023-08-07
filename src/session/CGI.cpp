@@ -146,7 +146,8 @@ char **setEnv(const Path &reqResource, HttpClient &client)
         }
     }
     env[i++] = formatHeader("SCRIPT_FILENAME", reqResource.c_str(), false);
-    env[i++] = formatHeader("QUERY_STRING", reqResource.c_str(), false);
+    env[i++] = formatHeader("QUERY_STRING", reqResource.getQueryString(), false);
+    // HEADEAR NEEDED : REQUEST_METHOD
     env[i] = NULL;
     return (env);
     // exit(100);
