@@ -264,9 +264,9 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 			{
 				/*** Process the received data. ***/
 				buffer[bytesRead] = '\0';
-				if ((*client)->req.parseRequest(buffer))
+				servers_it serverConf = (*client)->getConfiguration();
+				if ((*client)->req.parseRequest(buffer, serverConf))
 				{
-					servers_it serverConf = (*client)->getConfiguration();
 					(*client)->processRequest(serverConf);
 					(*client)->setRequestComplete(true);
 					(*client)->req.closeFile();

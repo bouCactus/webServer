@@ -13,7 +13,7 @@ build/
 # Precompiled Headers
 *.gch
 *.pch
-
+*.idx
 # Compiled Dynamic libraries
 *.so
 *.dylib

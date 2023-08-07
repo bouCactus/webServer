@@ -28,14 +28,14 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  bool parseRequest(const std::string rawData);
+  bool parseRequest(const std::string rawData, servers_it& serverConf);
 
-  void printRaw(){
-    std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
-    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end() ; it++){
-      std::cout << it->first << ":" << it->second << std::endl;
-    }
-  }
+  // void printRaw(){
+  //   std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
+  //   for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end() ; it++){
+  //     std::cout << it->first << ":" << it->second << std::endl;
+  //   }
+  // }
   void closeFile();
   std::string getMethod();
   http::filesystem::Path getPath() const;
@@ -71,7 +71,7 @@ private:
 
 
   void processRequestHeaders(); // it is not good idea (bool)
-  bool processRequestBodyContent();
+  bool processRequestBodyContent(servers_it& serverConf);
   bool parseChunkedEncoding();
   bool parseBoundaryChunk( std::string& boundary);
   bool prepareFileForPostRequest();

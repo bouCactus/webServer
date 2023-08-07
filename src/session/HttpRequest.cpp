@@ -1,5 +1,7 @@
 #include "HttpRequest.hpp"
-
+#include "HttpClient.hpp"
+#include "fileSystem.hpp"
+#include "CGI.hpp"
 #include <fstream>
 HttpRequest::HttpRequest(void) {
     std::cout << "Resquest: constructor not implemented yet" << std::endl;
@@ -269,7 +271,7 @@ bool HttpRequest::parseBoundaryChunk(std::string& boundary) {
     return false;
 }
 
-bool HttpRequest::processRequestBodyContent() {
+bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
     const std::string& contentLength = headers["Content-Length"];
     const std::string& transferEncoding = headers["Transfer-Encoding"];
     const std::string& contentType = headers["Content-Type"];
@@ -285,9 +287,16 @@ bool HttpRequest::processRequestBodyContent() {
         size_t boundaryPos = contentType.find(boundaryPrefix);
         if (boundaryPos != std::string::npos) {
             // Process boundary
-            std::string boundary =
-                contentType.substr(boundaryPos + boundaryPrefix.size());
-            return parseBoundaryChunk(boundary);
+            // now if location has CGI whole body request goes to CGI
+            http::filesystem::Path requestedResource = this->getPathWRoot(this->getPath(), serverConf);
+            if (hasCGI(requestedResource, *this, serverConf)){
+                if (storeChunkToFile(_requestBuffer)){
+                     _requestBuffer.clear();
+                }
+            }else{
+                std::string boundary = contentType.substr(boundaryPos + boundaryPrefix.size());
+                return parseBoundaryChunk(boundary);
+            }
         }
 
         // Process content with known length
@@ -302,7 +311,7 @@ bool HttpRequest::processRequestBodyContent() {
     return true;
 }
 
-bool HttpRequest::parseRequest(const std::string rawData) {
+bool HttpRequest::parseRequest(const std::string rawData, servers_it& serverConf) {
     _requestBuffer += rawData;
 
     if (!_headersProcessed) {
@@ -310,7 +319,7 @@ bool HttpRequest::parseRequest(const std::string rawData) {
         processRequestHeaders();
     }
     // Process the request body
-    return processRequestBodyContent();
+    return processRequestBodyContent(serverConf);
 }
 
 std::vector<std::string> getAllDirectories(const std::string& path) {
