@@ -14,9 +14,10 @@ void createErrorPageResponse(const servers_it& serverConf,
     HttpResponse &res = client.res;
     std::stringstream body;
     std::string statusMessage = res.status.getStatusMessage(statCode);
-    std::string serverName = *(serverConf->getServerNames().begin());
-
-    if (serverName.empty()) {serverName = serverConf->getHost();}
+    std::string serverName;
+    
+    serverName = serverConf->getServerNames().empty() ? serverConf->getHost() \
+                : *(serverConf->getServerNames().begin());
     res.defaultErrorResponse(statCode);
     res.appendHeader("Content-Type", "text/html");
     body
