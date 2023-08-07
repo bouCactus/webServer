@@ -34,6 +34,7 @@ class HttpServer
 		/***************************************************************/
 		int		createNewSocket();
 		void	setupServers(servers_it &server, int socket, const std::string& port);
+        int     biding_socket(servers_it &server, int &socket, const char* port);
 		void	start();
 
 		bool	waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds);

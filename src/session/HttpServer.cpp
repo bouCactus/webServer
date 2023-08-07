@@ -78,38 +78,48 @@ int HttpServer::createNewSocket()
 	return (serverSocket);
 }
 
+
+int   HttpServer::biding_socket(servers_it &server, int &socket, const char* port) {
+    int              error;
+    struct addrinfo  hints;
+    struct addrinfo  *result, *res;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_protocol = 0;
+
+    error = getaddrinfo(server->getHost().c_str(), port, &hints, &result);
+    if (error == 0 && bind(socket, result->ai_addr, result->ai_addrlen) == 0) {
+        return (0); /* Success */
+    }
+    values_it serverName = server->getServerNames().begin();
+    values_it end = server->getServerNames().end();
+    for (; serverName != end; serverName++) {
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_protocol = 0;
+        error = getaddrinfo(serverName->c_str(), port, &hints, &result);
+        if (error != 0) {
+            continue;
+        }
+        /*** Try each address until we successfully bind the socket. ***/
+        for (res = result; res != NULL; res = res->ai_next) {
+            if (bind(socket, res->ai_addr, res->ai_addrlen) == 0) {
+                return (0); /* Success */
+            }
+        }
+    }
+    freeaddrinfo(result);
+    return (1);
+}
+
+
 void HttpServer::setupServers(servers_it &server, int serverSocket, const std::string &port)
 {
-	/*** Set up server address. ***/
-
-	sockaddr_in serverAddr;
-	std::memset(&serverAddr, 0, sizeof(serverAddr));
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(atoi(port.c_str()));
-	serverAddr.sin_addr.s_addr = inet_addr(server->getHost().c_str());
-	// serverAddr.sin_addr.s_addr = INADDR_ANY;
-	// memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
-
-	/**********************************/
-	// int status;
-	// struct addrinfo hints;
-	// struct addrinfo *servinfo;  // will point to the results
-
-	// memset(&hints, 0, sizeof hints); // make sure the struct is empty
-	// hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6
-	// hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
-	// hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
-
-	// if ((status = getaddrinfo(server->getHost().c_str(), port.c_str(), &hints, &servinfo)) != 0) {
-	//     fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
-	//     exit(1);
-	// }
-	/**********************************/
-
-	/*** Bind the socket to the server address. ***/
-	if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
-	{
-		std::cerr << "Error binding socket [" << server->getHost().c_str() << ":" << port.c_str() << "] : ";
+    /*** Checking the Address structures to find the best possible match. ***/
+    /******* Try each address until the socket is successfully bound. ********/
+	if (biding_socket(server, serverSocket, port.c_str())) {
+		std::cerr << "Error binding socket ["<<server->getHost().c_str()<<":"<<port.c_str()<<"] : ";
 		close(serverSocket);
 		throw HttpError(*this, errno);
 	}
@@ -162,26 +172,6 @@ void HttpServer::start()
 
 bool HttpServer::waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds)
 {
-
-	// std::cout << "/****************************** PRINT SETS **********************************/\n";
-	// for(serverSock_it server = serverSockets.begin(); server != serverSockets.end(); server++) {
-	//     if (FD_ISSET(server->first, &tempReadfds))
-	//         std::cout << "RD. Server socket: " << server->first << std::endl;
-	// }
-	// for(client_it client = _clients.begin();client != _clients.end(); ++client) {
-	//     if (FD_ISSET(client->getSocket(), &tempReadfds))
-	//         std::cout << "RD. Client socket: " << client->getSocket() << std::endl;
-	// }
-	// for(serverSock_it server = serverSockets.begin(); server != serverSockets.end(); server++) {
-	//     if (FD_ISSET(server->first, &tempWritefds))
-	//         std::cout << "WR. Server socket: " << server->first << std::endl;
-	// }
-	// for(client_it client = _clients.begin();client != _clients.end(); ++client) {
-	//     if (FD_ISSET(client->getSocket(), &tempWritefds))
-	//         std::cout << "WR. Client socket: " << client->getSocket() << std::endl;
-	// }
-	// std::cout << "/****************************************************************************/\n";
-
 	int activity = select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, NULL);
 	if (activity == -1)
 	{
@@ -345,44 +335,6 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 	}
 }
 
-// void HttpServer::checkForWriting(fd_set &tempWritefds) {
-//     client_it client = _clients.begin();
-//     while (client != _clients.end()) {
-//         int clientSocket = (*client)->getSocket();
-//         if ((*client)->isRequestComplete() && FD_ISSET(clientSocket, &tempWritefds)) {
-
-//             // Prepare and send a response to the client.
-//             std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
-
-// 			if ((*client)->res.getBody().empty()){
-//     			(*client)->sendFileResponse((*client)->res,(*client)->getSocket());
-//   			}else{
-//     			std::cout << "normal sendResponse" << std::endl;
-//     			(*client)->sendResponse();
-//   			}
-//             int bytesSent = send(clientSocket, response.c_str(), response.length(), 0);
-//             if (bytesSent == -1) {
-//                 std::cerr << "Error sending response to client: " << strerror(errno) << std::endl;
-//                 close(clientSocket);
-//                 FD_CLR(clientSocket, &readfds);
-//                 FD_CLR(clientSocket, &writefds);
-//             } else {
-//                 std::cout << "Response sent to client socket " << clientSocket << std::endl;
-//                 // Remove the client and clear its socket from the fd-sets.
-//                 close(clientSocket);
-//                 FD_CLR(clientSocket, &readfds);
-//                 FD_CLR(clientSocket, &writefds);
-
-//                 // Remove the client from the list.
-// 				std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
-//                 client = _clients.erase(client);
-
-//                 continue;
-//             }
-//         }
-//         ++client;
-//     }
-// }
 void HttpServer::closeServerSockets()
 {
 	serverSock_it serverSocket = serverSockets.begin();
