@@ -82,7 +82,6 @@ void HttpRequest::processRequestHeaders() {
             if (colonPos != std::string::npos) {
                 std::string key = line.substr(0, colonPos);
                 std::string value = line.substr(colonPos + 1);
-                std::string whitespaces(" \t\f\v\n\r");
                 // Trim leading and trailing whitespaces from the key and value
                 trim(value);
                 trim(key);

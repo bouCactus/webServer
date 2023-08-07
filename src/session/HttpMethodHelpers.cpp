@@ -12,14 +12,11 @@ bool resourceExists(Path& reqResource) {
 void createErrorPageResponse(const servers_it& serverConf,
                                      const int statCode, HttpClient &client) {
     HttpResponse &res = client.res;
-
-    (void)(serverConf);
-    // i don't know how to use this getServerNames is it set of names, how
-    //serverConf->getServerNames();
-    std::string severName = "WebServer 0.1";
     std::stringstream body;
     std::string statusMessage = res.status.getStatusMessage(statCode);
+    std::string serverName = *(serverConf->getServerNames().begin());
 
+    if (serverName.empty()) {serverName = serverConf->getHost();}
     res.defaultErrorResponse(statCode);
     res.appendHeader("Content-Type", "text/html");
     body
@@ -27,7 +24,7 @@ void createErrorPageResponse(const servers_it& serverConf,
         << statusMessage << "</title></head><body><h1><center>" << statCode
         << " " << statusMessage << "<hr>"
         << "</center></h1><p><center>"
-        << severName
+        << serverName
         <<"</center></p></body></html>";
     res.setBody(body.str());
     res.appendHeader("Content-length", TO_STRING(res.getBodySize()));

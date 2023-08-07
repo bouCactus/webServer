@@ -120,7 +120,7 @@ std::string HttpResponse::getHeaders(){
   return (headerStream.str());
 }
 
-void HttpResponse::defaultErrorResponse(int status){ 
+void HttpResponse::defaultErrorResponse(int status){
   this->setStatus(status);
   this->setVersion("HTTP/1.1");
   this->appendHeader("Date", getTimeGMT());

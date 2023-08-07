@@ -80,9 +80,10 @@ int HttpServer::createNewSocket()
 
 
 int   HttpServer::biding_socket(servers_it &server, int &socket, const char* port) {
-    int              error;
-    struct addrinfo  hints;
-    struct addrinfo  *result, *res;
+    int             error;
+    struct addrinfo hints;
+    struct addrinfo *result;
+    struct addrinfo *res;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -118,24 +119,24 @@ void HttpServer::setupServers(servers_it &server, int serverSocket, const std::s
 {
     /*** Checking the Address structures to find the best possible match. ***/
     /******* Try each address until the socket is successfully bound. ********/
-	if (biding_socket(server, serverSocket, port.c_str())) {
-		std::cerr << "Error binding socket ["<<server->getHost().c_str()<<":"<<port.c_str()<<"] : ";
-		close(serverSocket);
-		throw HttpError(*this, errno);
-	}
+    if (biding_socket(server, serverSocket, port.c_str())) {
+        std::cerr << "Error binding socket ["<<server->getHost().c_str()<<":"<<port.c_str()<<"] : ";
+        close(serverSocket);
+        throw HttpError(*this, errno);
+    }
 
-	/*** Listen for incoming connections. ***/
-	if (listen(serverSocket, 1) == -1)
-	{
-		std::cerr << "Error listening on socket : ";
-		close(serverSocket);
-		throw HttpError(*this, errno);
-	}
+    /*** Listen for incoming connections. ***/
+    if (listen(serverSocket, 1) == -1)
+    {
+        std::cerr << "Error listening on socket : ";
+        close(serverSocket);
+        throw HttpError(*this, errno);
+    }
 
-	// Add the server socket to the read fd set `readfds`.
-	FD_SET(serverSocket, &readfds);
+    // Add the server socket to the read fd set `readfds`.
+    FD_SET(serverSocket, &readfds);
 
-	std::cout << "Start listening on [" << serverSocket << "] ---- [" << server->getHost().c_str() << ":" << port.c_str() << "]\n";
+    std::cout << "Start listening on [" << serverSocket << "] ---- [" << server->getHost().c_str() << ":" << port.c_str() << "]\n";
 }
 
 /************************************************************************/
