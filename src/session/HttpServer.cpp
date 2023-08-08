@@ -283,10 +283,9 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 			if (tmpint == -1)
 			{
 				// Prepare and send a response to the client.
-				std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
 				int bytesSent;
-
-				if ((*client)->res.getBody().empty() && (*client)->res.getStatus() != 500)
+				// the check change to filename because body sometime empty but not a file
+				if (!(*client)->res.getFilename().empty() && (*client)->res.getStatus() != 500) 
 				{
 					bytesSent = (*client)->sendFileResponse((*client)->res, (*client)->getSocket());
 				}

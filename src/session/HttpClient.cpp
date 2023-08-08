@@ -2,6 +2,9 @@
 #include "HttpResponse.hpp"
 #include "HttpClient.hpp"
 #include "HttpMethodProcessor.hpp"
+#include "confAST.hpp"
+#include "confTypes.hpp"
+#include "fileSystem.hpp"
 #include <unistd.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -10,7 +13,7 @@
 int sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated things */){
   std::stringstream	st;
   std::string		content;
-  std::cout << "----------------->" << "\"" << res.getVersion() << "\"" << std::endl;
+  // std::cout << "----------------->" << "\"" << res.getVersion() << "\"" << std::endl;
   st << res.getVersion() << " " << res.getStatus() << " " << res.status.getStatusMessage(res.getStatus()) << "\r\n"
      << res.getHeaders() << "\r\n";
   content = st.str();
@@ -99,10 +102,31 @@ int HttpClient::sendFileResponse(HttpResponse& res, int socket/*just to test*/)
 /**************** Handle Request Functions ****************/
 /**********************************************************/
 
+
+std::string shouldRedirect(const HttpClient& client, const servers_it& serverConf){
+  http::filesystem::Path reqResouces = client.req.getPath();
+  std::string locationName = client.req.findlocationOfUrl(reqResouces, serverConf);
+  Location location = serverConf->at(locationName);
+  values_t newLocation = location.getRedirect();
+  if (newLocation.size() <= 0){
+    return ("");
+  }
+  return (*newLocation.begin());// replace the string with real value
+}
+
+void redirectToNewLocation(std::string newLcoation,HttpClient& client){
+  client.res.defaultErrorResponse(301);
+  client.res.appendHeader("Location", newLcoation);
+}
+
 void HttpClient::processRequest(servers_it& conf_S) {
   HttpMethodProcessor	method;
   if (!_isHeaderSent){
-    if (req.getMethod()	== "GET") {
+      std::string locationToRedirect = shouldRedirect(*this, conf_S);
+     if (!locationToRedirect.empty()) {
+        redirectToNewLocation(locationToRedirect, *this);
+        return;
+    }else if (req.getMethod()	== "GET") {
       method.processGetRequest(*this, conf_S);
     } else if (req.getMethod() == "POST") {
       method.processPostRequest(*this, conf_S);
