@@ -164,6 +164,9 @@ void createDirectoryResponse(hfs::Path& reqResource,
 
     if (!reqResource.endswith('/')) {
         res.defaultErrorResponse(301);
+        std::string newResourcePath = client.req.getPath().c_str();
+        newResourcePath.append("/");
+        res.appendHeader("Location", newResourcePath);
         return ;
     }
     if (client.res.getProccessPID() == -1)

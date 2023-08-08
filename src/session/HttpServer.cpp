@@ -93,9 +93,8 @@ int   HttpServer::biding_socket(servers_it &server, int &socket, const char* por
     if (error == 0 && bind(socket, result->ai_addr, result->ai_addrlen) == 0) {
         return (0); /* Success */
     }
-    values_it serverName = server->getServerNames().begin();
-    values_it end = server->getServerNames().end();
-    for (; serverName != end; serverName++) {
+    values_t serverNames = server->getServerNames();
+    for (values_it serverName = serverNames.begin(); serverName != serverNames.end(); serverName++) {
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_protocol = 0;
@@ -166,7 +165,7 @@ void HttpServer::start()
 			checkForReading(tempReadfds);
 			/*** Check for activity on client sockets for writing response. ***/
 			checkForWriting(tempWritefds);
-			std::cout << "dora" << std::endl;
+			// std::cout << "dora" << std::endl;
 		}
 	}
 }
@@ -279,13 +278,13 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 		if ((*client)->isRequestComplete() && FD_ISSET(clientSocket, &tempWritefds))
 		{
 			int tmpint = (*client)->res.getProccessPID();
-			std::cout << "the pid of tmpint" << tmpint << std::endl;
+			// std::cout << "the pid of tmpint" << tmpint << std::endl;
 			if (tmpint == -1)
 			{
 				// Prepare and send a response to the client.
 				int bytesSent;
 				// the check change to filename because body sometime empty but not a file
-				if (!(*client)->res.getFilename().empty() && (*client)->res.getStatus() != 500) 
+				if (!(*client)->res.getFilename().empty()) 
 				{
 					bytesSent = (*client)->sendFileResponse((*client)->res, (*client)->getSocket());
 				}
@@ -316,7 +315,7 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 						FD_CLR(clientSocket, &writefds);
 
 						// Remove the client from the list.
-						std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
+						//std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
 						HttpClient *temp = *client;
 						client = _clients.erase(client);
 						delete temp;

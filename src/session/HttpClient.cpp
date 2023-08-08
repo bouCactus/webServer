@@ -105,6 +105,7 @@ int HttpClient::sendFileResponse(HttpResponse& res, int socket/*just to test*/)
 
 std::string shouldRedirect(const HttpClient& client, const servers_it& serverConf){
   http::filesystem::Path reqResouces = client.req.getPath();
+  try{
   std::string locationName = client.req.findlocationOfUrl(reqResouces, serverConf);
   Location location = serverConf->at(locationName);
   values_t newLocation = location.getRedirect();
@@ -112,6 +113,9 @@ std::string shouldRedirect(const HttpClient& client, const servers_it& serverCon
     return ("");
   }
   return (*newLocation.begin());// replace the string with real value
+  }catch(...){
+    return ("");
+  }
 }
 
 void redirectToNewLocation(std::string newLcoation,HttpClient& client){
