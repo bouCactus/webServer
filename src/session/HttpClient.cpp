@@ -50,7 +50,7 @@ HttpClient::HttpClient(servers_it& server, int socket) : _socket(socket) {
     _writing = false;
     _isHeaderSent = false;
     _writingPos = 0;
-    
+    _connectedToServer = true;
 }
 
 void HttpClient::clean(){
@@ -101,7 +101,6 @@ int HttpClient::sendFileResponse(HttpResponse& res, int socket/*just to test*/)
 /**********************************************************/
 /**************** Handle Request Functions ****************/
 /**********************************************************/
-
 
 std::string shouldRedirect(const HttpClient& client, const servers_it& serverConf){
   http::filesystem::Path reqResouces = client.req.getPath();
@@ -171,4 +170,16 @@ bool 	  HttpClient::isRequestComplete(){
 }
 void    HttpClient::setRequestComplete(bool state){
   _isRequestComplete = state;
+}
+
+/**********************************************************/
+/******************* Client Interaction *******************/
+/**********************************************************/
+
+bool    HttpClient::clientIsConnected() {
+    return (this->_connectedToServer);
+}
+
+void    HttpClient::setClientInteraction(bool stat) {
+    this->_connectedToServer = stat;
 }

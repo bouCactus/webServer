@@ -17,7 +17,6 @@ HttpServer &HttpServer::operator=(const HttpServer &httpServer)
 
 HttpServer::~HttpServer()
 {
-
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
 	for (clients_t::iterator client = _clients.begin(); client != _clients.end(); ++client)
@@ -31,7 +30,7 @@ HttpServer::~HttpServer()
 /********************** Setting up the HttpServer ***********************/
 /************************************************************************/
 
-HttpServer::HttpServer(servers_t &servers) : maxFileDescriptor(0)
+HttpServer::HttpServer(servers_t &servers) : serversNotConnected(0), maxFileDescriptor(0)
 {
 
 	/*** Initializes the file descriptor sets to contain no file descriptors. ***/
@@ -54,6 +53,9 @@ HttpServer::HttpServer(servers_t &servers) : maxFileDescriptor(0)
 			maxFileDescriptor = std::max(maxFileDescriptor, serverSocket);
 		}
 	}
+    if (serversNotConnected == servers.size()) {
+        throw ServersNotConnected();
+    }
 }
 
 int HttpServer::createNewSocket()
@@ -66,6 +68,7 @@ int HttpServer::createNewSocket()
 	{
 		std::cerr << "Error creating socket" << std::endl;
 		throw HttpError(*this, errno);
+        std::cout << strerror(errno) << std::endl;
 	}
 
 	/*** Allows local addresses that are already in use to be bound ***/
@@ -74,13 +77,14 @@ int HttpServer::createNewSocket()
 	{
 		std::cerr << "Error set socket option [" << serverSocket << "] : ";
 		throw HttpError(*this, errno);
+        std::cout << strerror(errno) << std::endl;
 	}
 	return (serverSocket);
 }
 
 
 int   HttpServer::biding_socket(servers_it &server, int &socket, const char* port) {
-    int             error;
+    int             statCode;
     struct addrinfo hints;
     struct addrinfo *result;
     struct addrinfo *res;
@@ -89,8 +93,8 @@ int   HttpServer::biding_socket(servers_it &server, int &socket, const char* por
     hints.ai_family = AF_INET;
     hints.ai_protocol = 0;
 
-    error = getaddrinfo(server->getHost().c_str(), port, &hints, &result);
-    if (error == 0 && bind(socket, result->ai_addr, result->ai_addrlen) == 0) {
+    statCode = getaddrinfo(server->getHost().c_str(), port, &hints, &result);
+    if (statCode == 0 && bind(socket, result->ai_addr, result->ai_addrlen) == 0) {
         return (0); /* Success */
     }
     values_t serverNames = server->getServerNames();
@@ -98,8 +102,8 @@ int   HttpServer::biding_socket(servers_it &server, int &socket, const char* por
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_protocol = 0;
-        error = getaddrinfo(serverName->c_str(), port, &hints, &result);
-        if (error != 0) {
+        statCode = getaddrinfo(serverName->c_str(), port, &hints, &result);
+        if (statCode != 0) {
             continue;
         }
         /*** Try each address until we successfully bind the socket. ***/
@@ -121,7 +125,8 @@ void HttpServer::setupServers(servers_it &server, int serverSocket, const std::s
     if (biding_socket(server, serverSocket, port.c_str())) {
         std::cerr << "Error binding socket ["<<server->getHost().c_str()<<":"<<port.c_str()<<"] : ";
         close(serverSocket);
-        throw HttpError(*this, errno);
+        serversNotConnected++;
+        std::cout << strerror(errno) << std::endl;
     }
 
     /*** Listen for incoming connections. ***/
@@ -129,7 +134,7 @@ void HttpServer::setupServers(servers_it &server, int serverSocket, const std::s
     {
         std::cerr << "Error listening on socket : ";
         close(serverSocket);
-        throw HttpError(*this, errno);
+        std::cout << strerror(errno) << std::endl;
     }
 
     // Add the server socket to the read fd set `readfds`.
@@ -177,6 +182,7 @@ bool HttpServer::waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds)
 	{
 		std::cerr << "Error select : \n ";
 		throw HttpError(*this, errno);
+        std::cout << strerror(errno) << std::endl;
 	}
 	return activity;
 }
@@ -231,7 +237,7 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 			char buffer[MAX_BUFFER_SIZE];
 			int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 			if (std::string(buffer).find("0\r\n\r\n") != std::string::npos)
-			{
+            {
 				FD_CLR(clientSocket, &readfds);
 				FD_SET(clientSocket, &writefds);
 			}
@@ -241,6 +247,7 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 				close(clientSocket);
 				FD_CLR(clientSocket, &readfds);
 				FD_CLR(clientSocket, &writefds);
+                (*client)->setClientInteraction(false);
 			}
 			else if (bytesRead == 0)
 			{
@@ -249,20 +256,24 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 				close(clientSocket);
 				FD_CLR(clientSocket, &readfds);
 				FD_SET(clientSocket, &writefds);
+                (*client)->setClientInteraction(false);
 			}
 			else
 			{
 				/*** Process the received data. ***/
 				buffer[bytesRead] = '\0';
 				servers_it serverConf = (*client)->getConfiguration();
-				if ((*client)->req.parseRequest(buffer, serverConf))
-				{
+				int statCode = (*client)->req.parseRequest(buffer, serverConf);
+                if (statCode == 0) {
 					(*client)->processRequest(serverConf);
-					(*client)->setRequestComplete(true);
-					(*client)->req.closeFile();
-					FD_CLR(clientSocket, &readfds);
-					FD_SET(clientSocket, &writefds);
 				}
+                else {
+                    createErrorPageResponse(serverConf, statCode, *(*client));
+                }
+                (*client)->setRequestComplete(true);
+                (*client)->req.closeFile();
+                FD_CLR(clientSocket, &readfds);
+                FD_SET(clientSocket, &writefds);
 				/*** Add the client socket to the write file descriptor set for response. ***/
 			}
 		}
@@ -315,7 +326,7 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 						FD_CLR(clientSocket, &writefds);
 
 						// Remove the client from the list.
-						//std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
+						// std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
 						HttpClient *temp = *client;
 						client = _clients.erase(client);
 						delete temp;
@@ -352,7 +363,6 @@ void HttpServer::closeServerSockets()
 
 void HttpServer::setNewFD(int newSocket)
 {
-
 	/*** Add the socket to the sets of file descriptors. ***/
 	FD_SET(newSocket, &readfds);
 
@@ -367,6 +377,7 @@ int HttpServer::getMaxFileDescriptor() { return maxFileDescriptor; }
 /************************************************************************/
 /************************** Helpers and Tools ***************************/
 /************************************************************************/
+
 void HttpServer::addNewClient(HttpClient *client)
 {
 	_clients.push_back(client);

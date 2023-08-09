@@ -49,23 +49,27 @@ public:
       HTTP_GATEWAY_TIMEOUT                 = 504,
       HTTP_VERSION_NOT_SUPPORTED           = 505
     };
-  HttpStatusCodes() {
-    statusCodes[HTTP_OK] = "OK";
-    statusCodes[HTTP_MOVED_PERMANENTLY] = "Moved Permanently";
-    statusCodes[HTTP_NOT_FOUND] = "Not Found";
-    statusCodes[HTTP_FORBIDDEN] = "Forbidden";
-    // Add more status codes as needed
-  }
-
-  std::string getStatusMessage(int statusCode) {
-    if (statusCodes.count(statusCode) > 0) {
-      return statusCodes[statusCode];
-    } else {
-      return "Unknown Status Code";
+    HttpStatusCodes() {
+        statusCodes[HTTP_OK] = "OK";
+        statusCodes[HTTP_MOVED_PERMANENTLY] = "Moved Permanently";
+        statusCodes[HTTP_NOT_FOUND] = "Not Found";
+        statusCodes[HTTP_FORBIDDEN] = "Forbidden";
+        statusCodes[HTTP_NOT_IMPLEMENTED] = "Http Not Implemented";
+        statusCodes[HTTP_BAD_REQUEST] = "Http Bad Request";
+        statusCodes[HTTP_REQUESTURITOOLONG] = "Http Request URI Too Long";
+        statusCodes[HTTP_REQUESTENTITYTOOLARGE] = "Http Request Entity Too Large";
+        // Add more status codes as needed
     }
-  }
+
+    std::string getStatusMessage(int statusCode) {
+        if (statusCodes.count(statusCode) > 0) {
+        return statusCodes[statusCode];
+        } else {
+        return "Unknown Status Code";
+        }
+    }
 
 private:
-  std::map<int , std::string> statusCodes;
+    std::map<int , std::string> statusCodes;
 };
 #endif // __HTTPSTATUSHANDLER__H

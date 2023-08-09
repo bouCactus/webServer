@@ -88,6 +88,13 @@ void HttpRequest::processRequestHeaders() {
 
                 // Store the header in the headers map
                 headers[key] = value;
+
+                // std::cout << "***************************************" << std::endl;
+                // std::cout << "***************************************" << std::endl;
+                // std::cout << "|" << key << "| ----> |" << value << "|\n";
+                // std::cout << "***************************************" << std::endl;
+                // std::cout << "***************************************" << std::endl;
+
             }
         }
         _headersProcessed = true;
@@ -270,7 +277,46 @@ bool HttpRequest::parseBoundaryChunk(std::string& boundary) {
     return false;
 }
 
-bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
+bool  HttpRequest::characterNotAllowed(const std::string& path) {
+    // Not implemented yet
+    // ...
+    (void)path;
+    return (false);
+}
+
+
+int HttpRequest::checkRequestErrors(servers_it& serverConf, int check) {
+    const std::string& contentLength = headers["Content-Length"];
+    const std::string& transferEncoding = headers["Transfer-Encoding"];
+    const std::string& maxBodySize = serverConf->getMax();
+
+    switch(check) {
+    case CHECK_ALL:
+        if (!transferEncoding.empty() && transferEncoding != "chunked") {
+            return NOT_IMPLEMENTED;
+        }
+        else if (transferEncoding.empty() && contentLength.empty() && this->getMethod() == "POST") {
+            return BAD_REQUEST;
+        }
+        else if (characterNotAllowed(this->getPath().c_str())) { // Not implemented yet
+            return BAD_REQUEST;
+        }
+        else if (strlen(this->getPath().c_str()) > MAX_CHARS_IN_PATH) {
+            return REQUESTURITOOLONG;
+        }
+    case CHECK_BODY_LENGHT:
+        // std::cout << "<<<< Max Body Size: "<< std::atoi(maxBodySize.c_str()) << " >>>>>\n";
+        if (std::atoi(contentLength.c_str()) > std::atoi(maxBodySize.c_str())*1e6) {
+            return REQUESTURITOOLONG;
+        } else if (CHECK_ALL) {
+            break;
+        }
+        return ACCURATE;
+    }
+    return NOT_IMPLEMENTED;
+}
+
+int HttpRequest::processRequestBodyContent(servers_it& serverConf) {
     const std::string& contentLength = headers["Content-Length"];
     const std::string& transferEncoding = headers["Transfer-Encoding"];
     const std::string& contentType = headers["Content-Type"];
@@ -281,7 +327,8 @@ bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
         std::cout << "|+|==============chunked==================|+|"
                   << std::endl;
         return parseChunkedEncoding();
-    } else if (!contentLength.empty()) {
+    }
+    else if (!contentLength.empty() && checkRequestErrors(serverConf, CHECK_BODY_LENGHT) == ACCURATE) {
         _contentLength += _requestBuffer.size();
         size_t boundaryPos = contentType.find(boundaryPrefix);
         if (boundaryPos != std::string::npos) {
@@ -292,7 +339,7 @@ bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
                 if (storeChunkToFile(_requestBuffer)){
                      _requestBuffer.clear();
                 }
-            }else{
+            } else {
                 std::string boundary = contentType.substr(boundaryPos + boundaryPrefix.size());
                 return parseBoundaryChunk(boundary);
             }
@@ -302,15 +349,16 @@ bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
         if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer)) {
             _requestBuffer.clear();
         }
-        // Do something when body overflow
+
+        // Do something when body overflow   (to be checked)??????????????
         return (_contentLength ==
-                static_cast<size_t>(std::stoi(contentLength)));
+                static_cast<size_t>(std::atoi(contentLength.c_str())));
     }
     // No content or unsupported encoding
-    return true;
+    return checkRequestErrors(serverConf, CHECK_ALL);
 }
 
-bool HttpRequest::parseRequest(const std::string rawData, servers_it& serverConf) {
+int HttpRequest::parseRequest(const std::string rawData, servers_it& serverConf) {
     _requestBuffer += rawData;
 
     if (!_headersProcessed) {

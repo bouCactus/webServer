@@ -12,6 +12,15 @@
 
 namespace hfs = http::filesystem;
 
+#define ACCURATE                0
+#define CHECK_ALL               1
+#define CHECK_BODY_LENGHT       2
+#define NOT_IMPLEMENTED       501
+#define BAD_REQUEST           400
+#define REQUESTURITOOLONG     414
+#define REQUESTENTITYTOOLARGE 413
+#define MAX_CHARS_IN_PATH    2048
+
 struct FormDataPart {
     string        name;
     string        filename;
@@ -20,6 +29,7 @@ struct FormDataPart {
     std::ofstream* fileStream;
     bool           isFileOpen;
 };
+
 class HttpRequest{
 public:
   std::string body;
@@ -28,7 +38,7 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  bool parseRequest(const std::string rawData, servers_it& serverConf);
+  int parseRequest(const std::string rawData, servers_it& serverConf);
 
   // void printRaw(){
   //   std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
@@ -46,7 +56,7 @@ public:
 				 const std::string&  location,
 				 const servers_it&   conf)const; 
   hfs::Path getPathWRoot(const hfs::Path& path,
-				      const servers_it& conf)const; 
+				      const servers_it& conf)const;
   bool isRequestEnd();
   void setRequestEnd(bool state);
   void setResourceCreatedSuccessfully(bool status);
@@ -70,20 +80,17 @@ private:
   
 
 
-  void processRequestHeaders(); // it is not good idea (bool)
-  bool processRequestBodyContent(servers_it& serverConf);
-  bool parseChunkedEncoding();
-  bool parseBoundaryChunk( std::string& boundary);
-  bool prepareFileForPostRequest();
-  bool prepareFileForPostRequest(FormDataPart& part);
-  bool storeChunkToFile(std::string& chunk);
-  void parseMultipartFileContent(const std::string& content, size_t start, size_t end);
-  
-
-
+  void  processRequestHeaders(); // it is not good idea (bool)
+  int   processRequestBodyContent(servers_it& serverConf);
+  bool  parseChunkedEncoding();
+  bool  parseBoundaryChunk( std::string& boundary);
+  bool  prepareFileForPostRequest();
+  bool  prepareFileForPostRequest(FormDataPart& part);
+  bool  storeChunkToFile(std::string& chunk);
+  void  parseMultipartFileContent(const std::string& content, size_t start, size_t end);
+  int   checkRequestErrors(servers_it& serverConf, int check);
+  bool  characterNotAllowed(const std::string& path);
 };
-
-
 
 #endif //__HTTPREQUEST__H_
 
