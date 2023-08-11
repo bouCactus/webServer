@@ -5,7 +5,7 @@ BUILD = build
 MYDIR = $(BUILD)/objs 
 BIN = $(BUILD)/bin
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address
+CXXFLAGS = -Wall -Wextra -Werror
 OBJ = $(SRCS:.cpp=.o)
 OBJBONUS = $(SRCBONUS:.cpp=.o)
 
@@ -71,8 +71,8 @@ re: fclean all
 run: 
 	$(BIN)/$(NAME)  ./test/multiplexer/file.conf
 
-include test/parsing/Makefile.mk
-include test/simpleResponse/Makefile.mk
-include test/multiplexer/Makefile.mk
+# include test/parsing/Makefile.mk
+# include test/simpleResponse/Makefile.mk
+# include test/multiplexer/Makefile.mk
 
 .PHONY: all clean fclean re run

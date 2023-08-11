@@ -5,7 +5,7 @@
 #include "HttpMethodHelpers.hpp"
 #include "HttpClient.hpp"
 #include "HttpTypes.hpp"
-
+#include <iterator>
 
 /*** HttpServer ***/
 typedef std::pair<int, servers_it>  serverConf;
@@ -62,6 +62,7 @@ class HttpServer
 
         // Used to check if all servers are successfully setting up.
         size_t serversNotConnected;
+        size_t maxServerSockets;
 
     private:
         clients_t       _clients;

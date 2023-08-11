@@ -174,7 +174,7 @@ void createDirectoryResponse(hfs::Path& reqResource,
         indexPath = getindex(reqResource, req, serverConf);
         client.setIndexPath(indexPath);
     }
-    std::cout << "go to the index: [" << indexPath.c_str() << "]" << std::endl;
+    // std::cout << "go to the index: [" << indexPath.c_str() << "]" << std::endl;
     if (client.getIndexPath().empty()) {
         if (isAutoIndexEnabled(req, serverConf)) {
             // return (getAutoIndex(req, serverConf));

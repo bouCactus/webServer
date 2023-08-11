@@ -58,6 +58,7 @@ void HttpClient::clean(){
     kill(this->res.getProccessPID(), SIGKILL);
   this->res.clean();
 }
+
 HttpClient::~HttpClient(){
   clean();
   std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
@@ -129,9 +130,11 @@ void HttpClient::processRequest(servers_it& conf_S) {
      if (!locationToRedirect.empty()) {
         redirectToNewLocation(locationToRedirect, *this);
         return;
-    }else if (req.getMethod()	== "GET") {
+    }
+    else if (req.getMethod()	== "GET") {
       method.processGetRequest(*this, conf_S);
-    } else if (req.getMethod() == "POST") {
+    }
+     else if (req.getMethod() == "POST") {
       method.processPostRequest(*this, conf_S);
     } else if (req.getMethod() == "DELETE") {
       method.processDeleteRequest(*this, conf_S);

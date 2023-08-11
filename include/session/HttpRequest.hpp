@@ -81,14 +81,14 @@ private:
 
 
   void  processRequestHeaders(); // it is not good idea (bool)
-  int   processRequestBodyContent(servers_it& serverConf);
+  bool   processRequestBodyContent(servers_it& serverConf);
   bool  parseChunkedEncoding();
   bool  parseBoundaryChunk( std::string& boundary);
   bool  prepareFileForPostRequest();
   bool  prepareFileForPostRequest(FormDataPart& part);
   bool  storeChunkToFile(std::string& chunk);
   void  parseMultipartFileContent(const std::string& content, size_t start, size_t end);
-  int   checkRequestErrors(servers_it& serverConf, int check);
+  int   checkRequestErrors(servers_it& serverConf);
   bool  characterNotAllowed(const std::string& path);
 };
 

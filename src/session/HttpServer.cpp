@@ -30,9 +30,9 @@ HttpServer::~HttpServer()
 /********************** Setting up the HttpServer ***********************/
 /************************************************************************/
 
-HttpServer::HttpServer(servers_t &servers) : serversNotConnected(0), maxFileDescriptor(0)
+HttpServer::HttpServer(servers_t &servers) 
+    : serversNotConnected(0), maxServerSockets(0), maxFileDescriptor(0)
 {
-
 	/*** Initializes the file descriptor sets to contain no file descriptors. ***/
 	FD_ZERO(&readfds);
 	FD_ZERO(&writefds);
@@ -51,9 +51,12 @@ HttpServer::HttpServer(servers_t &servers) : serversNotConnected(0), maxFileDesc
 
 			/*** Set the max-File-Descriptor. ***/
 			maxFileDescriptor = std::max(maxFileDescriptor, serverSocket);
+
 		}
+        /*** Find out the number of server sockets to be created. ***/
+        maxServerSockets += server->getPorts().size();
 	}
-    if (serversNotConnected == servers.size()) {
+    if (serversNotConnected == maxServerSockets) {
         throw ServersNotConnected();
     }
 }
@@ -73,7 +76,8 @@ int HttpServer::createNewSocket()
 
 	/*** Allows local addresses that are already in use to be bound ***/
 	int yes = 1;
-	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
+	if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1 || 
+        setsockopt(serverSocket, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes)) == -1)
 	{
 		std::cerr << "Error set socket option [" << serverSocket << "] : ";
 		throw HttpError(*this, errno);
@@ -92,6 +96,7 @@ int   HttpServer::biding_socket(servers_it &server, int &socket, const char* por
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_protocol = 0;
+    hints.ai_socktype = SOCK_STREAM;
 
     statCode = getaddrinfo(server->getHost().c_str(), port, &hints, &result);
     if (statCode == 0 && bind(socket, result->ai_addr, result->ai_addrlen) == 0) {
@@ -102,6 +107,7 @@ int   HttpServer::biding_socket(servers_it &server, int &socket, const char* por
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET;
         hints.ai_protocol = 0;
+        hints.ai_socktype = SOCK_STREAM;
         statCode = getaddrinfo(serverName->c_str(), port, &hints, &result);
         if (statCode != 0) {
             continue;
@@ -196,10 +202,8 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
 
 	for (; server != serverSockets.end(); server++)
 	{
-
 		if (FD_ISSET(server->first, &tempReadfds))
 		{
-
 			/*** Accept the incoming connection. ***/
 			int newSocket = accept(server->first, NULL, NULL);
 			if (newSocket == -1)
@@ -211,7 +215,7 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
 			fcntl(newSocket, F_SETFL, O_NONBLOCK);
 
 			/*** Create new Client. ***/
-			std::cout << "newClient" << std::endl;
+			std::cout << "newClient [[[ " << newSocket << " ]]] --- serverSocker ``" << server->first << "``" << std::endl;
 			HttpClient *newClient = new HttpClient((server->second), newSocket);
 
 			addNewClient(newClient);
@@ -233,7 +237,6 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 		if (FD_ISSET(clientSocket, &tempReadfds))
 		{
 			/*** Handle data received from client. ***/
-			std::cout << "id:" << (*client)->getSocket() << std::endl;
 			char buffer[MAX_BUFFER_SIZE];
 			int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 			if (std::string(buffer).find("0\r\n\r\n") != std::string::npos)
@@ -244,19 +247,23 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 			if (bytesRead == -1)
 			{
 				std::cerr << "Error receiving data from client [" << clientSocket << "] --> " << strerror(errno) << std::endl;
-				close(clientSocket);
+				std::cout << close(clientSocket) << "\n";
 				FD_CLR(clientSocket, &readfds);
 				FD_CLR(clientSocket, &writefds);
                 (*client)->setClientInteraction(false);
+                // Remove the client from the list.
+                this->removeClient(client);
 			}
 			else if (bytesRead == 0)
 			{
 				// client->req.setRequestEnd(true);
-				std::cout << "``````````````Client disconnected. Client socket: " << clientSocket << "``````````````" << std::endl;
-				close(clientSocket);
+				std::cout << "```````Client disconnected. Client socket: " << clientSocket << "```````" << std::endl;
+				std::cout << close(clientSocket) << "\n";
 				FD_CLR(clientSocket, &readfds);
 				FD_SET(clientSocket, &writefds);
                 (*client)->setClientInteraction(false);
+                // Remove the client from the list.
+                this->removeClient(client);
 			}
 			else
 			{
@@ -264,14 +271,15 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
 				buffer[bytesRead] = '\0';
 				servers_it serverConf = (*client)->getConfiguration();
 				int statCode = (*client)->req.parseRequest(buffer, serverConf);
-                if (statCode == 0) {
+                if (statCode == 1) {
 					(*client)->processRequest(serverConf);
 				}
                 else {
                     createErrorPageResponse(serverConf, statCode, *(*client));
                 }
+                (void)statCode;
                 (*client)->setRequestComplete(true);
-                (*client)->req.closeFile();
+                // (*client)->req.closeFile();
                 FD_CLR(clientSocket, &readfds);
                 FD_SET(clientSocket, &writefds);
 				/*** Add the client socket to the write file descriptor set for response. ***/
@@ -286,53 +294,42 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
 	while (client != _clients.end())
 	{
 		int clientSocket = (*client)->getSocket();
-		if ((*client)->isRequestComplete() && FD_ISSET(clientSocket, &tempWritefds))
+		if (FD_ISSET(clientSocket, &tempWritefds) && (*client)->isRequestComplete())
 		{
 			int tmpint = (*client)->res.getProccessPID();
 			// std::cout << "the pid of tmpint" << tmpint << std::endl;
 			if (tmpint == -1)
 			{
 				// Prepare and send a response to the client.
-				int bytesSent;
+				int bytesSent = 0;
 				// the check change to filename because body sometime empty but not a file
-				if (!(*client)->res.getFilename().empty()) 
+				if (!(*client)->res.getFilename().empty())
 				{
 					bytesSent = (*client)->sendFileResponse((*client)->res, (*client)->getSocket());
 				}
-				else
-				{
+				else {
 					std::cout << "normal sendResponse" << std::endl;
 					bytesSent = (*client)->sendResponse();
 				}
-
-				if (bytesSent == -1)
-				{
-					std::cerr << "Error sending response to client: " << strerror(errno) << std::endl;
-					close(clientSocket);
-					FD_CLR(clientSocket, &readfds);
-					FD_CLR(clientSocket, &writefds);
-				}
-				else
-				{
-					// Remove the client and clear its socket from the fd-sets.
-					if ((*client)->isRespondComplete())
-					{
-
-						std::cout << "Response sent to client socket and delete " << clientSocket << std::endl;
-						std::cout << "Going to delete: " << (*client)->res.getCGIFile().second << "\n";
-						(*client)->clean();
-						close(clientSocket);
-						FD_CLR(clientSocket, &readfds);
-						FD_CLR(clientSocket, &writefds);
-
-						// Remove the client from the list.
-						// std::cout << "client " << (*client)->getSocket() << " remove from the list" << std::endl;
-						HttpClient *temp = *client;
-						client = _clients.erase(client);
-						delete temp;
-						continue;
-					}
-				}
+                
+                if (bytesSent == -1 || (*client)->isRespondComplete()) {
+                    if (bytesSent == -1) {
+					    std::cerr << "Error sending response to client: " << strerror(errno) << std::endl;
+                    }
+                    else {
+                        // Remove the client and clear its socket from the fd-sets.
+                        std::cout << "Response sent to client socket and delete " << clientSocket << std::endl;
+                        std::cout << "Going to delete: " << (*client)->res.getCGIFile().second << "\n";
+                        (*client)->clean();
+                    }
+                    std::cout << close(clientSocket) << "\n";
+                    FD_CLR(clientSocket, &readfds);
+                    FD_CLR(clientSocket, &writefds);
+                    
+                    // Remove the client from the list.
+                    this->removeClient(client);
+                    continue;
+                }
 			}
 			else
 			{
@@ -385,5 +382,8 @@ void HttpServer::addNewClient(HttpClient *client)
 
 void HttpServer::removeClient(client_it &client)
 {
-	_clients.erase(client);
+    HttpClient *temp = *client;
+    client = _clients.erase(client);
+    delete temp;
+    std::cout << ">>>> nbr of clients after delete: " << _clients.size() << "<<<<" << std::endl;
 }

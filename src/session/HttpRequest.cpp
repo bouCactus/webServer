@@ -76,6 +76,9 @@ void HttpRequest::processRequestHeaders() {
         lineStream >> _method >> path >> _version;
         _path.setPath(path);
         // Parse the headers
+                // std::cout << "***************************************" << std::endl;
+                // std::cout << "***             REQUEST             ***" << std::endl;
+                // std::cout << "***************************************" << std::endl;
         while (std::getline(iss, line) && !line.empty()) {
             // Split each header line into key and value
             std::size_t colonPos = line.find(':');
@@ -89,14 +92,11 @@ void HttpRequest::processRequestHeaders() {
                 // Store the header in the headers map
                 headers[key] = value;
 
-                // std::cout << "***************************************" << std::endl;
-                // std::cout << "***************************************" << std::endl;
                 // std::cout << "|" << key << "| ----> |" << value << "|\n";
-                // std::cout << "***************************************" << std::endl;
-                // std::cout << "***************************************" << std::endl;
 
             }
         }
+                // std::cout << "***************************************" << std::endl;
         _headersProcessed = true;
     }
 }
@@ -278,45 +278,22 @@ bool HttpRequest::parseBoundaryChunk(std::string& boundary) {
 }
 
 bool  HttpRequest::characterNotAllowed(const std::string& path) {
-    // Not implemented yet
-    // ...
-    (void)path;
+    
+    // Allowed Characters: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
+    // ASCII Codes:        [ 33 ] [ 35 ] [ 36 ] [ 38---59 ] [ 61 ] [ 63---91 ] [ 93 ] [ 95 ] [ 97---122 ] [ 126 ]
+
+    for (size_t i = 0; i < path.size(); i++) {
+        if (path[i]!=33 and path[i]!=35 and path[i]!=36 and !(path[i]>=38 && path[i]<=59) \
+            and path[i]!=61 and !(path[i]>=63 && path[i]<=91) and path[i]!=93 and path[i]!=95 \
+            and !(path[i]>=97 && path[i]<=122) and path[i]!=126)
+        {
+            return (true);
+        }
+    }
     return (false);
 }
 
-
-int HttpRequest::checkRequestErrors(servers_it& serverConf, int check) {
-    const std::string& contentLength = headers["Content-Length"];
-    const std::string& transferEncoding = headers["Transfer-Encoding"];
-    const std::string& maxBodySize = serverConf->getMax();
-
-    switch(check) {
-    case CHECK_ALL:
-        if (!transferEncoding.empty() && transferEncoding != "chunked") {
-            return NOT_IMPLEMENTED;
-        }
-        else if (transferEncoding.empty() && contentLength.empty() && this->getMethod() == "POST") {
-            return BAD_REQUEST;
-        }
-        else if (characterNotAllowed(this->getPath().c_str())) { // Not implemented yet
-            return BAD_REQUEST;
-        }
-        else if (strlen(this->getPath().c_str()) > MAX_CHARS_IN_PATH) {
-            return REQUESTURITOOLONG;
-        }
-    case CHECK_BODY_LENGHT:
-        // std::cout << "<<<< Max Body Size: "<< std::atoi(maxBodySize.c_str()) << " >>>>>\n";
-        if (std::atoi(contentLength.c_str()) > std::atoi(maxBodySize.c_str())*1e6) {
-            return REQUESTURITOOLONG;
-        } else if (CHECK_ALL) {
-            break;
-        }
-        return ACCURATE;
-    }
-    return NOT_IMPLEMENTED;
-}
-
-int HttpRequest::processRequestBodyContent(servers_it& serverConf) {
+bool HttpRequest::processRequestBodyContent(servers_it& serverConf) {
     const std::string& contentLength = headers["Content-Length"];
     const std::string& transferEncoding = headers["Transfer-Encoding"];
     const std::string& contentType = headers["Content-Type"];
@@ -327,8 +304,7 @@ int HttpRequest::processRequestBodyContent(servers_it& serverConf) {
         std::cout << "|+|==============chunked==================|+|"
                   << std::endl;
         return parseChunkedEncoding();
-    }
-    else if (!contentLength.empty() && checkRequestErrors(serverConf, CHECK_BODY_LENGHT) == ACCURATE) {
+    } else if (!contentLength.empty()) {
         _contentLength += _requestBuffer.size();
         size_t boundaryPos = contentType.find(boundaryPrefix);
         if (boundaryPos != std::string::npos) {
@@ -339,7 +315,7 @@ int HttpRequest::processRequestBodyContent(servers_it& serverConf) {
                 if (storeChunkToFile(_requestBuffer)){
                      _requestBuffer.clear();
                 }
-            } else {
+            }else{
                 std::string boundary = contentType.substr(boundaryPos + boundaryPrefix.size());
                 return parseBoundaryChunk(boundary);
             }
@@ -349,13 +325,35 @@ int HttpRequest::processRequestBodyContent(servers_it& serverConf) {
         if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer)) {
             _requestBuffer.clear();
         }
-
-        // Do something when body overflow   (to be checked)??????????????
+        // Do something when body overflow
         return (_contentLength ==
-                static_cast<size_t>(std::atoi(contentLength.c_str())));
+                static_cast<size_t>(std::stoi(contentLength)));
     }
     // No content or unsupported encoding
-    return checkRequestErrors(serverConf, CHECK_ALL);
+    return true;
+}
+
+int HttpRequest::checkRequestErrors(servers_it& serverConf) {
+    const std::string& contentLength = headers["Content-Length"];
+    const std::string& transferEncoding = headers["Transfer-Encoding"];
+    const std::string& maxBodySize = serverConf->getMax();
+
+    if (!transferEncoding.empty() && transferEncoding != "chunked") {
+        return NOT_IMPLEMENTED;
+    }
+    else if (transferEncoding.empty() && contentLength.empty() && this->getMethod() == "POST") {
+        return BAD_REQUEST;
+    }
+    else if (characterNotAllowed(this->getPath().c_str())) {
+        return BAD_REQUEST;
+    }
+    else if (strlen(this->getPath().c_str()) > MAX_CHARS_IN_PATH) {
+        return REQUESTURITOOLONG;
+    }
+    else if (std::atoi(contentLength.c_str()) > std::atoi(maxBodySize.c_str())*1e6) {
+        return REQUESTURITOOLONG;
+    }
+    return ACCURATE;
 }
 
 int HttpRequest::parseRequest(const std::string rawData, servers_it& serverConf) {
@@ -365,6 +363,9 @@ int HttpRequest::parseRequest(const std::string rawData, servers_it& serverConf)
         // Process request headers only if they haven't been parsed yet
         processRequestHeaders();
     }
+    int errorFound = checkRequestErrors(serverConf);
+    if (errorFound)
+        return (errorFound);
     // Process the request body
     return processRequestBodyContent(serverConf);
 }

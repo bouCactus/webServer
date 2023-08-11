@@ -106,7 +106,7 @@ Location Server::at(std::string location)
 
 	if (it == _locations.end())
 	{
-		LOG_THROW();
+		// LOG_THROW();
 		throw std::exception();
 	}
 	return (it->second);
