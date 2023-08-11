@@ -12,6 +12,7 @@ Config::Config(std::string const &path)
 	_servers = Parser(path)();
 };
 
+
 /**
  * @brief   		print a set of values (value_t)
  * @param	val		set of value_t to be printed.
@@ -88,6 +89,15 @@ servers_t Config::getServers() { return _servers; }
  */
 locations_t &Server::getLocations() { return _locations; };
 
+
+/**
+ * @brief   		get the error_pages directives in config file.
+ * @return 			map of error pages <int, string>.
+ */
+
+mapErrors_t     &Server::getmapErrors(){ return _mapErrors; };
+
+
 /**
  * @brief   		get the directives block in config file.
  * @return 			list of Servers.
@@ -122,7 +132,7 @@ values_t Server::getPorts()
 	if (it == _directives.end())
 	{
 		values_t t;
-		t.insert(DEF_PORT);
+		t.push_back(DEF_PORT);
 		return (t);
 	}
 	return it->second;
@@ -162,7 +172,7 @@ values_t Server::getErrorPage()
 	if (it == _directives.end())
 	{
 		values_t t;
-		t.insert(DEF_ERR_PAGE);
+		t.push_back(DEF_ERR_PAGE);
 		return (t);
 	}
 	return it->second;
@@ -205,7 +215,8 @@ bool Location::isAllowed(Req req)
 		method = "POST";
 	if (req == GET)
 		method = "GET";
-	values_it v_it = it->second.find(method);
+	
+	values_it v_it = find(it->second.begin(), it->second.end(), method);
 	if (v_it == it->second.end())
 		return false;
 	return true;
@@ -222,6 +233,25 @@ values_t Location::getRedirect()
 		return (values_t());
 	return it->second;
 };
+
+
+int Location::getCgiTimeOut(){
+	directives_it it = _directives.find("cgi_time_out");
+	if (it == _directives.end())
+		return (DEF_CGI_TIME_OUT);
+	return atoi(it->second.begin()->c_str());
+}
+/**
+ * @brief   		get the values of upload_path directive.
+ * @return 			values of the upload_path directive.
+ */
+
+value_t Location::getUploadPath(){
+	directives_it it = _directives.find("upload_path");
+	if (it == _directives.end())
+		return (value_t());
+	return *(it->second.begin());
+}
 
 /**
  * @brief   		get the value of root directive.
@@ -259,31 +289,15 @@ values_t Location::getIndex()
 	if (it == _directives.end())
 	{
 		values_t t;
-		t.insert(DEF_INDEX);
+		t.push_back(DEF_INDEX);
 		return (t);
 	}
 	return it->second;
 };
 
-strPair_t Location::getCGI()
+CGIMap_t &Location::getCGI()
 {
-	directives_it it = _directives.find("cgi_pass");
-	strPair_t cgiList;
-	if (it == _directives.end())
-	{
-		return (cgiList);
-	}
-	values_it val = (it->second).begin();
-	for (; val != (it->second).end(); val++)
-	{
-		std::string key, value;
-		size_t p = (*val).find(":");
-		// we made a assemption that that value is correct.
-		key = (*val).substr(0, p);
-		value = (*val).substr(++p);
-		cgiList[key] = value;
-	}
-	return cgiList;
+	return _CGIMap;
 }
 
 bool Location::isCGIAllowed(Req req)
@@ -297,7 +311,7 @@ bool Location::isCGIAllowed(Req req)
 		method = "POST";
 	if (req == GET)
 		method = "GET";
-	values_it v_it = it->second.find(method);
+	values_it v_it = find(it->second.begin(), it->second.end(), method);
 	if (v_it == it->second.end())
 		return false;
 	return true;

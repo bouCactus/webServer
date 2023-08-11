@@ -23,7 +23,9 @@ enum Key
 	HOST,
 	ALLOW,
 	RETURN,
-	CGI_ALLOW
+	CGI_ALLOW,
+	UPLOAD_PATH,
+	CGI_TIME_OUT
 };
 
 enum Type
@@ -44,9 +46,13 @@ enum Req
 	DELETE,
 };
 
+typedef std::map<std::string, std::string> CGIMap_t;
+typedef CGIMap_t::iterator CGIMap_it;
+typedef std::pair<std::string, std::string> CGIMap_elm;
+
 // key and values for each directive
 typedef std::string value_t;
-typedef std::set<std::string> values_t;
+typedef std::vector<std::string> values_t;
 
 // server
 typedef std::list<Server> servers_t;
@@ -71,6 +77,10 @@ typedef std::string::size_type size_s;
 typedef std::map<std::string, std::string> strPair_t;
 typedef strPair_t::iterator strPair_it;
 
+// errormap
+typedef std::map<std::string, std::string> mapErrors_t;
+typedef mapErrors_t::iterator mapErrors_it;
+
 #define DEF_HOST "127.0.0.1"
 #define DEF_PORT "80"
 #define DEF_ERR_PAGE "/home/error.html"
@@ -79,8 +89,10 @@ typedef strPair_t::iterator strPair_it;
 #define DEF_ROOT "www/"
 #define DEF_AUTOINDEX 0
 #define DEF_INDEX "index.html"
+#define DEF_CGI_TIME_OUT 10
+#define DEF_UPLOAD_PATH "www/"
 #ifndef DEBUG
-#define DEBUG 1
+#define DEBUG 0
 #endif
 
 #if DEBUG

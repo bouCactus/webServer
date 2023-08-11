@@ -5,7 +5,7 @@ BUILD = build
 MYDIR = $(BUILD)/objs 
 BIN = $(BUILD)/bin
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address
+CXXFLAGS = -Wall -Wextra -Werror #-fsanitize=address
 OBJ = $(SRCS:.cpp=.o)
 OBJBONUS = $(SRCBONUS:.cpp=.o)
 

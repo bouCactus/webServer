@@ -10,6 +10,7 @@
 class Location {
     private:
         directives_t    _directives;
+        CGIMap_t       _CGIMap;
     public:
         directives_t    &getDirectives();
         bool            isAllowed(Req req);
@@ -17,22 +18,27 @@ class Location {
         value_t         getRoot();
         bool            isAutoIndex();
         values_t        getIndex();
-        strPair_t         getCGI();
+        CGIMap_t        &getCGI();
         bool            isCGIAllowed(Req req);
+        value_t         getUploadPath();
+        int             getCgiTimeOut();
+
 };
 
 class Server {
     private:
         directives_t    _directives;
         locations_t     _locations;
+        mapErrors_t     _mapErrors;
     public:
         locations_t     &getLocations();
         directives_t    &getDirectives();
+        mapErrors_t     &getmapErrors();
         Location        at(std::string location);
         values_t        getPorts();
         value_t         getHost();
         values_t        getServerNames();
-        values_t         getErrorPage();
+        values_t        getErrorPage();
         value_t         getMax();
 };
 

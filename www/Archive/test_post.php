@@ -1,3 +1,6 @@
+<?php
+    header("Status: 200 Ok");
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,15 +20,17 @@
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Check if the form has been submitted
-        if (isset($_POST['hobby']) && isset($_POST['time'])) {
-            // Retrieve the submitted hobby and time
-            $hobby = $_POST['hobby'];
-            $time = $_POST['time'];
+        $input = file_get_contents('php://input');
+        parse_str($input, $postData);
 
-            // Display the output
-            echo '<p style="color: green;">The time of ' . $hobby .  ' is: ' . $time . '</p>';
-        }
+        $hobby = isset($postData['hobby']) ? $postData['hobby'] : '';
+        $time = isset($postData['time']) ? $postData['time'] : '';
+        echo '<p style="color: green;">The time of ' . $hobby .  ' is: ' . $time . '</p>';
     }
+  
+    // foreach ($_SERVER as $key => $value) {
+    //     echo "<p>$key: $value</p>";
+    // }
     ?>
 </body>
 </html>

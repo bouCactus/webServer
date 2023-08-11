@@ -1,3 +1,6 @@
+<?php
+    header("Status: 200 Ok");
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,6 +18,7 @@
     </form>
 
     <?php
+    
     if ($_SERVER['REQUEST_METHOD'] === 'GET' || 1) {
         // Check if the form has been submitted
         if (isset($_GET['name']) && isset($_GET['age'])) {

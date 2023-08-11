@@ -1,6 +1,9 @@
 <?php
-session_start(); // start session to store the counter value
+    header("Status: 200 Ok");
 
+session_start(); // start session to store the counter value
+$input = file_get_contents('php://input');
+parse_str($input, $_POST);
 if(isset($_POST['increment'])) { // check if the increment button is clicked
     if(isset($_SESSION['counter'])) { // check if the counter variable is set in the session
         $_SESSION['counter']++; // increment the counter

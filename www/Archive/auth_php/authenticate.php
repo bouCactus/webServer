@@ -1,5 +1,9 @@
 <?php
- session_start();
+    header("Status: 200 Ok");
+
+    session_start();
+    $input = file_get_contents('php://input');
+    parse_str($input, $_POST);
  if(isset($_SESSION['username']) && !empty($_SESSION['username'])) {
     header('Location: index.php');
 }
@@ -25,5 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setcookie('error', 'Invalid username or password', time() + 30); // Expires in 1 hour
         header('Location: login.php');
     }
+    header("Location: http://localhost:8080/Archive/auth_php/index.php");
+
 }
 ?>

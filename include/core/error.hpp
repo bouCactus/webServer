@@ -1,2 +1,2 @@
 #pragma once
-#include "../parsing/confParseError.hpp"
+#include "confParseError.hpp"

@@ -1,3 +1,6 @@
+<?php
+    header("Status: 200 Ok");
+?>
 <!DOCTYPE html>
 <html>
 <head>

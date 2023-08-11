@@ -36,6 +36,7 @@ public:
   void validate_allow(values_t values);
   void validate_return(values_t values);
   void validate_cgi_allow(values_t values);
-
+  void validate_upload_path(values_t values);
+  void validate_cgi_time_out(values_t values);
   ~Parser();
 };

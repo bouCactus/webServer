@@ -1,3 +1,5 @@
 <?PHP
-echo  "ELmounikor is HEEEEEEERRRRE\n";
+    header("Status: 200 Ok");
+
+echo  "maarifa is HEEEEEEERRRRE\n";
 ?>

@@ -8,11 +8,10 @@ int	main(int ac, char** av) {
 	try {
 		/*** Parsing the configuration file ***/ 
 		Config conf(av[1]);
-
+		//exit(1);
 		/*** Multiplexing ***/
 		servers_t	servers = conf.getServers();
 		HttpServer	httpServer(servers);
-
 		httpServer.start();
 
 		// httpServer.closeServerSockets();

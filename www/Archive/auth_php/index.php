@@ -1,4 +1,6 @@
 <?php
+    header("Status: 200 Ok");
+
 // Start the session to retrieve session variables
 session_start();
 ?>

@@ -12,15 +12,17 @@
 
 namespace hfs = http::filesystem;
 
-struct FormDataPart {
-    string        name;
-    string        filename;
-    string        content_type;
-    string        value;
-    std::ofstream* fileStream;
-    bool           isFileOpen;
+struct FormDataPart
+{
+  string name;
+  string filename;
+  string content_type;
+  string value;
+  std::ofstream *fileStream;
+  bool isFileOpen;
 };
-class HttpRequest{
+class HttpRequest
+{
 public:
   std::string body;
   HttpRequest();
@@ -28,7 +30,7 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  bool parseRequest(const std::string rawData, servers_it& serverConf);
+  bool parseRequest(const std::string rawData, servers_it &serverConf);
 
   // void printRaw(){
   //   std::cout <<  this->_method << " - " << this->_path.c_str() << " - " << this->_version<< std::endl;
@@ -40,51 +42,44 @@ public:
   std::string getMethod();
   http::filesystem::Path getPath() const;
   std::string getVersion();
-  std::string findlocationOfUrl(const hfs::Path&	path,
-					     const servers_it& conf)const;
-  hfs::Path addRoot(const hfs::Path&    path,
-				 const std::string&  location,
-				 const servers_it&   conf)const; 
-  hfs::Path getPathWRoot(const hfs::Path& path,
-				      const servers_it& conf)const; 
+  std::string findlocationOfUrl(const hfs::Path &path,
+                                const servers_it &conf) const;
+  hfs::Path addRoot(const hfs::Path &path,
+                    const std::string &location,
+                    const servers_it &conf) const;
+  hfs::Path getPathWRoot(const hfs::Path &path,
+                         const servers_it &conf) const;
   bool isRequestEnd();
   void setRequestEnd(bool state);
   void setResourceCreatedSuccessfully(bool status);
   bool resourceIsCreatedSuccessfully();
-  bool getHeaderProcessed(){
+  bool getHeaderProcessed()
+  {
     return (_headersProcessed);
   }
   std::map<std::string, std::string> &getHeaders();
+  size_t getContentLength() const;
+  std::vector<FormDataPart> getFormDataPart() const;
 private:
-  std::string                       _method;
-  http::filesystem::Path            _path; // this a class which deal with proning staff of path
-  std::string                       _version;
+  std::string _method;
+  http::filesystem::Path _path; // this a class which deal with proning staff of path
+  std::string _version;
   std::map<std::string, std::string> headers;
-  std::string                       _requestBuffer;
-  size_t                            _chunkSize;
-  size_t                            _contentLength;
-  bool                              _headersProcessed;
-  bool                              _resouceCreatedSyccessfully;
-  std::vector<FormDataPart>         _parsed_parts;
-  
-  
-
+  std::string _requestBuffer;
+  size_t _chunkSize;
+  size_t _contentLength;
+  bool _headersProcessed;
+  bool _resouceCreatedSyccessfully;
+  std::vector<FormDataPart> _parsed_parts;
 
   void processRequestHeaders(); // it is not good idea (bool)
-  bool processRequestBodyContent(servers_it& serverConf);
+  bool processRequestBodyContent(servers_it &serverConf);
   bool parseChunkedEncoding();
-  bool parseBoundaryChunk( std::string& boundary);
+  bool parseBoundaryChunk(std::string &boundary);
   bool prepareFileForPostRequest();
-  bool prepareFileForPostRequest(FormDataPart& part);
-  bool storeChunkToFile(std::string& chunk);
-  void parseMultipartFileContent(const std::string& content, size_t start, size_t end);
-  
-
-
+  bool prepareFileForPostRequest(FormDataPart &part);
+  bool storeChunkToFile(std::string &chunk);
+  void parseMultipartFileContent(const std::string &content, size_t start, size_t end);
 };
 
-
-
 #endif //__HTTPREQUEST__H_
-
-

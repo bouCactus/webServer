@@ -17,3 +17,5 @@ std::string convertTimeToGMT(std::time_t time) {
     std::strftime(buffer, 80, "%a, %d %b %Y %T GMT", &lt);  // Format the time
     return (buffer);
 }
+
+

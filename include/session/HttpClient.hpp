@@ -46,6 +46,8 @@ class HttpClient{
 		void clean();
 		void setIndexPath(hfs::Path &path);
 		hfs::Path &getIndexPath();
+		void setTimeOut(time_t time);
+		time_t getTimeOut() const;
 	private:
 		servers_it		_conf;
 		int				_socket;
@@ -56,6 +58,8 @@ class HttpClient{
   		std::streamsize _writingPos;
 		bool 			_isRequestComplete;
 		hfs::Path	    _indexPath;
+		time_t			_timeOut;
+
 };
 
 int sendHeader(HttpResponse& res,int  _socket /*_socket to not complicated things */);
