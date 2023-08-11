@@ -71,8 +71,8 @@ re: fclean all
 run: 
 	$(BIN)/$(NAME)  ./test/multiplexer/file.conf
 
-include test/parsing/Makefile.mk
-include test/simpleResponse/Makefile.mk
-include test/multiplexer/Makefile.mk
+# include test/parsing/Makefile.mk
+# include test/simpleResponse/Makefile.mk
+# include test/multiplexer/Makefile.mk
 
 .PHONY: all clean fclean re run

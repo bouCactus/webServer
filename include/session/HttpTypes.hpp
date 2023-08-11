@@ -39,4 +39,11 @@ class HttpError : public std::exception {
 		}
 };
 
+
+class ServersNotConnected : public std::exception {
+	const char* what() const throw() {
+		return ("Unable to establish connections with the specified upstream servers");
+	}
+};
+
 #endif	//__HTTPTYPES__HPP

@@ -5,15 +5,14 @@
 #include "confAST.hpp"
 #include "confTypes.hpp"
 #include "fileSystem.hpp"
+#include <ctime>
 #include <netinet/in.h>
 #include <signal.h>
 #include <unistd.h>
-#include <ctime>
 
 #include <fstream>
 int sendHeader(HttpResponse &res,
-               int _socket /*_socket to not complicated things */)
-{
+               int _socket /*_socket to not complicated things */) {
   std::stringstream st;
   std::string content;
   // std::cout << "----------------->" << "\"" << res.getVersion() << "\"" <<
@@ -29,8 +28,7 @@ int sendHeader(HttpResponse &res,
 void HttpClient::setIndexPath(hfs::Path &path) { _indexPath = path; }
 hfs::Path &HttpClient::getIndexPath() { return _indexPath; }
 
-HttpClient::HttpClient(const HttpClient &httpClient)
-{
+HttpClient::HttpClient(const HttpClient &httpClient) {
 
   std::cout << "HttpClient:: >>> Copy Constructor called\n";
   this->_socket = httpClient.getSocket();
@@ -39,54 +37,48 @@ HttpClient::HttpClient(const HttpClient &httpClient)
   _isRespondComplete = false;
 }
 
-HttpClient &HttpClient::operator=(const HttpClient &httpClient)
-{
+HttpClient &HttpClient::operator=(const HttpClient &httpClient) {
   std::cout << "HttpClient::>>> Assignement operator called\n";
-  if (this != &httpClient)
-  {
+  if (this != &httpClient) {
     this->_socket = httpClient.getSocket();
     _conf = httpClient._conf;
   }
   return *this;
 }
 
-HttpClient::HttpClient(servers_it &server, int socket) : _socket(socket)
-{
+HttpClient::HttpClient(servers_it &server, int socket) : _socket(socket) {
   _conf = server;
   _isRespondComplete = false;
   _writing = false;
   _isHeaderSent = false;
   _writingPos = 0;
+  _connectedToServer = true;
 }
 
-void HttpClient::clean()
-{
+void HttpClient::clean() {
   if (this->res.getProccessPID() != -1)
     kill(this->res.getProccessPID(), SIGKILL);
   this->res.clean();
 }
-HttpClient::~HttpClient()
-{
-  clean();
+
+HttpClient::~HttpClient() {
+  // clean();
   std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
 }
 
 int HttpClient::sendFileResponse(HttpResponse &res,
-                                 int socket /*just to test*/)
-{
+                                 int socket /*just to test*/) {
   // here where you open file and send it  by chunks
 
   std::ifstream file(res.getFilename().c_str(), std::istream::in);
   char buffer[1025];
   int sizePos;
   int bytesSent;
-  if (!file.is_open())
-  {
+  if (!file.is_open()) {
     res.setBody("error open file"); // you should replace with error page
     bytesSent = send(socket, res.getBody().c_str(), res.getBody().size(), 0);
   }
-  if (!_isHeaderSent)
-  {
+  if (!_isHeaderSent) {
     bytesSent = sendHeader(res, socket);
     _isHeaderSent = true;
   }
@@ -94,8 +86,7 @@ int HttpClient::sendFileResponse(HttpResponse &res,
   std::streamsize size = 1024;
   sizePos = file.read(buffer, size).gcount();
   buffer[sizePos] = '\0';
-  if (sizePos <= 0)
-  {
+  if (sizePos <= 0) {
     // close(_socket);
     _isHeaderSent = false;
     _writingPos = 0;
@@ -113,80 +104,56 @@ int HttpClient::sendFileResponse(HttpResponse &res,
 /**********************************************************/
 
 std::string shouldRedirect(const HttpClient &client,
-                           const servers_it &serverConf)
-{
+                           const servers_it &serverConf) {
   http::filesystem::Path reqResouces = client.req.getPath();
-  try
-  {
+  try {
     std::string locationName =
         client.req.findlocationOfUrl(reqResouces, serverConf);
     Location location = serverConf->at(locationName);
     values_t newLocation = location.getRedirect();
-    if (newLocation.size() <= 0)
-    {
+    if (newLocation.size() <= 0) {
       return ("");
     }
     return (*newLocation.begin()); // replace the string with real value
-  }
-  catch (...)
-  {
+  } catch (...) {
     return ("");
   }
 }
 
-void redirectToNewLocation(std::string newLcoation, HttpClient &client)
-{
+void redirectToNewLocation(std::string newLcoation, HttpClient &client) {
   client.res.defaultErrorResponse(301);
   client.res.appendHeader("Location", newLcoation);
 }
 
-void HttpClient::processRequest(servers_it &conf_S)
-{
+void HttpClient::processRequest(servers_it &conf_S) {
   HttpMethodProcessor method;
-  if (!_isHeaderSent)
-  {
+  if (!_isHeaderSent) {
     std::string locationToRedirect = shouldRedirect(*this, conf_S);
-    if (!locationToRedirect.empty())
-    {
-      std::cout << "check this location to redirect" << std::endl;
+    if (!locationToRedirect.empty()) {
       redirectToNewLocation(locationToRedirect, *this);
       return;
-    }
-    else if (req.getMethod() == "GET")
-    {
+    } else if (req.getMethod() == "GET") {
       method.processGetRequest(*this, conf_S);
-    }
-    else if (req.getMethod() == "POST")
-    {
+    } else if (req.getMethod() == "POST") {
       method.processPostRequest(*this, conf_S);
-    }
-    else if (req.getMethod() == "DELETE")
-    {
+    } else if (req.getMethod() == "DELETE") {
       method.processDeleteRequest(*this, conf_S);
-    }
-    else
-    {
+    } else {
       std::cout << "Handle unsupported HTTP method" << std::endl;
     }
   }
 }
 
-void HttpClient::setTimeOut(time_t time)
-{
-  _timeOut = time;
-};
+void HttpClient::setTimeOut(time_t time) { _timeOut = time; };
 
-time_t HttpClient::getTimeOut() const
-{
-  return _timeOut;
-};
+time_t HttpClient::getTimeOut() const { return _timeOut; };
 
-int HttpClient::sendResponse()
-{
+int HttpClient::sendResponse() {
   std::cout << "-------sending....---------------" << std::endl;
   sendHeader(res, _socket);
   _isHeaderSent = true;
-  std::cout << "body = " << res.getBody() << " size: " << res.getBodySize() << "\n";
+  std::cout << "body = " << res.getBody() << " size: " << res.getBodySize()
+            << "\n";
   int bytesSent = -1;
   // if (!res.getBody().empty())
   // bytesSent = send(_socket, "", 0, 0);
@@ -216,3 +183,13 @@ bool HttpClient::isRespondComplete() { return _isRespondComplete; }
 
 bool HttpClient::isRequestComplete() { return (_isRequestComplete); }
 void HttpClient::setRequestComplete(bool state) { _isRequestComplete = state; }
+
+/**********************************************************/
+/******************* Client Interaction *******************/
+/**********************************************************/
+
+bool HttpClient::clientIsConnected() { return (this->_connectedToServer); }
+
+void HttpClient::setClientInteraction(bool stat) {
+  this->_connectedToServer = stat;
+}

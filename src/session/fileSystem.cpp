@@ -186,12 +186,13 @@ bool http::filesystem::isIndexExests(const Path &dirPath,
 
   if ((dir = opendir(dirPath.c_str())) == NULL) {
     perror("Cannot open .");
-    exit(1);
+    return (false);
   }
   while ((dp = readdir(dir)) != NULL) {
 
     if (filename == dp->d_name) {
       // close the open directory
+      closedir(dir);
       return (true);
     }
   }

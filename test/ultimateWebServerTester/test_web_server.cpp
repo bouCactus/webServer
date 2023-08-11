@@ -33,7 +33,7 @@ public:
             dup2(devNull, STDERR_FILENO);
             close(devNull);
             execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
-            _exit(EXIT_FAILURE); 
+            _exit(EXIT_FAILURE);
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }

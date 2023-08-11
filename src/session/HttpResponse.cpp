@@ -14,7 +14,8 @@ HttpResponse::~HttpResponse(void){
 
 void HttpResponse::clean() {
   // close the temp file of CGI if there is one.
-  close(getCGIFile().first);
+  if (getCGIFile().first != 0)
+    close(getCGIFile().first);
   if (!getCGIFile().second.empty())
     unlink(getCGIFile().second.c_str());
 }

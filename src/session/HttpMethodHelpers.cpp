@@ -329,7 +329,7 @@ void createDirectoryPostResponse(hfs::Path &reqResource, HttpClient &client,
 bool isLocationAllowUpload(const HttpRequest &req,
                            const servers_it &serverConf) {
   std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
- // std::cout << "lcoation of post :" << location << std::endl;
+  // std::cout << "lcoation of post :" << location << std::endl;
   try {
     if (serverConf->at(location).isAllowed(POST))
       return (true);
