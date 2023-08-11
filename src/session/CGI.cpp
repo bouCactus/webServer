@@ -12,9 +12,11 @@
 #include <string>
 
 Location getLocationOfFastCGIextension(Path &requestFile,
-                                       const servers_it &serverConf) {
+                                       const servers_it &serverConf)
+{
 
-  if (!requestFile.has_extension()) {
+  if (!requestFile.has_extension())
+  {
     LOG_THROW();
     throw std::exception();
   }
@@ -30,7 +32,8 @@ Location getLocationOfFastCGIextension(Path &requestFile,
 }
 
 bool hasCGI(hfs::Path &path, const HttpRequest &req,
-            const servers_it &serverConf) {
+            const servers_it &serverConf)
+{
   // list of cgi in the this location
   std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
   Location l = serverConf->at(location);
@@ -78,7 +81,8 @@ extern char **environ;
 */
 
 char *formatHeader(std::string const &header, std::string const &value,
-                   bool appendHttp) {
+                   bool appendHttp)
+{
 
   int httpSize = 0;
   if (appendHttp)
@@ -91,7 +95,8 @@ char *formatHeader(std::string const &header, std::string const &value,
   typedef std::string::size_type size_str;
   size_str i = httpSize;
   size_str j = 0;
-  for (; j < header.length(); j++) {
+  for (; j < header.length(); j++)
+  {
     if (header[j] == '-')
       n[i++] = '_';
     else
@@ -105,7 +110,8 @@ char *formatHeader(std::string const &header, std::string const &value,
   return (n);
 }
 
-bool shouldPassToCGI(std::string const &header) {
+bool shouldPassToCGI(std::string const &header)
+{
   if (header == "Authorization" || header == "Proxy-Authorization" ||
       header == "WWW-Authenticate" || header == "Proxy-Authenticate" ||
       header == "Authentication-Info" || header == "X-Forwarded-User" ||
@@ -114,12 +120,14 @@ bool shouldPassToCGI(std::string const &header) {
   return true;
 }
 
-std::string getMimeType(HttpClient &client) {
+std::string getMimeType(HttpClient &client)
+{
   (void)client;
   return "text/html";
 }
 
-char **setEnv(const Path &reqResource, HttpClient &client) {
+char **setEnv(const Path &reqResource, HttpClient &client)
+{
   HttpRequest &req = client.req;
   HttpResponse &res = client.res;
   (void)res;
@@ -129,8 +137,10 @@ char **setEnv(const Path &reqResource, HttpClient &client) {
 
   HeaderType::iterator it = headers.begin();
   int i = 0;
-  for (; it != headers.end(); it++) {
-    if (shouldPassToCGI(it->first)) {
+  for (; it != headers.end(); it++)
+  {
+    if (shouldPassToCGI(it->first))
+    {
       env[i++] = formatHeader(it->first, it->second, true);
     }
   }
@@ -139,10 +149,10 @@ char **setEnv(const Path &reqResource, HttpClient &client) {
   env[i++] = formatHeader("QUERY_STRING", reqResource.getQueryString(), false);
   env[i++] = formatHeader("REQUEST_METHOD", req.getMethod(), false);
   env[i++] = formatHeader("SERVER_PROTOCOL", req.getVersion(), false);
-  env[i++] = formatHeader("CONTENT_LENGTH",
-                          std::to_string(req.getContentLength()), false);
-  env[i++] = formatHeader("CONTENT_TYPE", getMimeType(client),
-                          false); // SHOULD COME FROM THE REQUEST
+  env[i++] = formatHeader("CONTENT_LENGTH", std::to_string(req.getContentLength()), false);
+  string contentType = req.getHeaders()["Content-Type"];
+  if (!contentType.empty())
+    env[i++] = formatHeader("CONTENT_TYPE", contentType, false); // SHOULD COME FROM THE REQUEST
   env[i++] = formatHeader("PATH_INFO", reqResource.c_str(), false);
   env[i++] = formatHeader("REDIRECT_STATUS", "200", false);
   // HEADEAR NEEDED : REQUEST_METHOD
@@ -150,7 +160,8 @@ char **setEnv(const Path &reqResource, HttpClient &client) {
   return (env);
 }
 
-std::string generateUniqueName(int socket) {
+std::string generateUniqueName(int socket)
+{
   std::string fileName;
   std::stringstream s(fileName);
   time_t t = time(0);
@@ -161,19 +172,23 @@ std::string generateUniqueName(int socket) {
   return ("/tmp/CGI_temp_" + fileName + "_" + std::to_string(socket));
 }
 
-void print_env(char **env) {
+void print_env(char **env)
+{
   int i = 0;
-  while (env[i]) {
+  while (env[i])
+  {
     // std::cout << env[i] << "\n";
     i++;
   }
 }
 
-int getStatusCode(std::string &value) {
+int getStatusCode(std::string &value)
+{
   // std::cout << "checking : " << value << "\n";
   char *rest;
   std::string::size_type p = value.find_first_not_of(' ');
-  if (p == std::string::npos) {
+  if (p == std::string::npos)
+  {
     throw std::exception();
   }
   value = value.substr(p);
@@ -190,7 +205,8 @@ int getStatusCode(std::string &value) {
   return status;
 }
 
-void setHeaders(HttpClient &client, std::string &filename) {
+void setHeaders(HttpClient &client, std::string &filename)
+{
   // should remove the headers! and set them in res object. if no headers you
   // should throw 500 errror!
   HttpResponse &res = client.res;
@@ -204,12 +220,14 @@ void setHeaders(HttpClient &client, std::string &filename) {
   tmp.open(tmp_name.c_str(), std::ios::out | std::ios::in | std::ios::trunc);
   int isStatusSet = 0;
 
-  while (getline(out, line) && line != "\r") {
+  while (getline(out, line) && line != "\r")
+  {
 
     // std::cout << "header line : " << line <<  std::endl;
     std::string::size_type p = line.find_first_of(":");
 
-    if (p == string::npos) {
+    if (p == string::npos)
+    {
       std::cout << ": not found\n";
       throw std::exception();
     }
@@ -220,25 +238,31 @@ void setHeaders(HttpClient &client, std::string &filename) {
     if (p != std::string::npos)
       value = value.substr(0, p);
     p = value.find_first_not_of(' ');
-    if (p == string::npos) {
+    if (p == string::npos)
+    {
       std::cout << ": not found\n";
       throw std::exception();
     }
     value = value.substr(p);
-    if (key.empty() || value.empty()) {
+    if (key.empty() || value.empty())
+    {
       std::cout << "empty val\n";
       throw std::exception();
     }
-    if (key == "Status") {
+    if (key == "Status")
+    {
       res.setStatus(getStatusCode(value));
       isStatusSet = 1;
-    } else {
+    }
+    else
+    {
       std::cout << "key : [" << key << "] value [" << value << "]\n";
       res.appendHeader(key, value); // WHY THE HELL THIS NOT WORKING!!!!!!!!!!!
     }
     // getline(out, line);
   }
-  if (line.empty() || !isStatusSet) {
+  if (line.empty() || !isStatusSet)
+  {
     std::cout << "no status\n";
     throw std::exception();
   }
@@ -259,7 +283,8 @@ void setHeaders(HttpClient &client, std::string &filename) {
   // if (line.fin)
 }
 
-void printBody(const char *f) {
+void printBody(const char *f)
+{
   std::cout << "FILE PATH : " << f << "\n";
   std::fstream out;
   out.open(f);
@@ -270,7 +295,8 @@ void printBody(const char *f) {
 
 void executeCGIScriptAndGetResponse(const Path &reqResource,
                                     const servers_it &serverConf,
-                                    HttpClient &client) {
+                                    HttpClient &client)
+{
   HttpResponse &res = client.res;
   HttpRequest &req = client.req;
   (void)req;
@@ -289,7 +315,8 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
   //      printBody((req.getFormDataPart())[0].filename.c_str());
 
   // }
-  try {
+  try
+  {
     std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
     Location CGILocation = serverConf->at(location);
     std::string reqMethod = req.getMethod();
@@ -297,10 +324,12 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
 
     if ((reqMethod == "GET" && !CGILocation.isCGIAllowed(GET)) ||
         (reqMethod == "POST" && !CGILocation.isCGIAllowed(POST)) ||
-        (reqMethod != "GET" && reqMethod != "POST")) {
+        (reqMethod != "GET" && reqMethod != "POST"))
+    {
       throw std::exception();
     }
-    if (res.getProccessPID() == -1) {
+    if (res.getProccessPID() == -1)
+    {
       // std::cout << "file to be execute = " << reqResource.c_str() << "\n";
       std::string fileName = generateUniqueName(client.getSocket());
       int fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
@@ -309,7 +338,8 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
         throw std::exception();
       // this is where you can read dataƒ
       int inFile = 0;
-      if (req.getFormDataPart().size() != 0) {
+      if (req.getFormDataPart().size() != 0)
+      {
         std::cout << "FILE INPUT IS HEAR!!\n";
         inFile = open((req.getFormDataPart())[0].filename.c_str(), O_RDWR);
       }
@@ -323,7 +353,8 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       int pid = fork();
       if (pid == -1)
         throw std::exception();
-      if (pid == 0) {
+      if (pid == 0)
+      {
         // setting the envirement
         char **env = setEnv(reqResource, client);
         char *arg[3];
@@ -351,38 +382,58 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
         // res.setStatus(500);
         exit(13);
         // std::cout << "I CAN NOT BABY!!!\n";
-      } else {
+      }
+      else
+      {
         res.setProccessPID(pid);
         res.setCGIFile(fd, fileName);
       }
     }
     int status;
     int p = waitpid(res.getProccessPID(), &status, WNOHANG);
-    if (p == 0) {
+    if (p == 0)
+    {
       // child is still there
-      char buff[10];
-      if (read(client.getSocket(), &buff, 10) == 0) {
-        // buff[9] = '\0';
+      if (!client.clientIsConnected())
+      {
         client.clean();
         res.setProccessPID(-1);
-        std::cout << "client mach fhaloooo!\n" << buff << "\n";
-      } else {
+        std::cout << "client mach fhaloooo!\n";
+        // << buff << "\n";
+      }
+      // char buff[10];
+      // if (read(client.getSocket(), &buff, 10) == 0)
+      // {
+      //   // buff[9] = '\0';
+      //   client.clean();
+      //   res.setProccessPID(-1);
+      //   std::cout << "client mach fhaloooo!\n"
+      //             << buff << "\n";
+      // }
+      else
+      {
         // std::cout << "WE are going to wait : " << CGILocation.getCgiTimeOut()
         // << "\n";
-        if (time(0) - client.getTimeOut() > CGILocation.getCgiTimeOut()) {
+
+        if (time(0) - client.getTimeOut() > CGILocation.getCgiTimeOut())
+        {
           throw std::exception();
         }
       }
       // else
-      // std::cout << "hey we still here!!\n";
+      std::cout << "hey we still here!!\n";
       // client.setRespondComplete(false);
-    } else if (p == -1 || (WIFEXITED(status) && WEXITSTATUS(status) == 13)) {
+    }
+    else if (p == -1 || (WIFEXITED(status) && WEXITSTATUS(status) == 13))
+    {
       // std::cout << "erro bay!\n";
       // exit(50);
       std::cout << "child exited quickly\n";
       throw std::exception();
       //  error
-    } else {
+    }
+    else
+    {
       res.setProccessPID(-1);
       // std::cout << "sending your data\n";
       std::string f = res.getCGIFile().second;
@@ -397,7 +448,9 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
     }
     // std::cout << "HANG ON PLEASE WORKING ON IT!!\n";
     // return (res);
-  } catch (std::exception &e) {
+  }
+  catch (std::exception &e)
+  {
     res.setStatus(500);
     if (res.getProccessPID() != -1)
       client.clean();
@@ -407,7 +460,8 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
   }
 }
 
-Location getLocation(const HttpRequest &req, servers_it &serverConf) {
+Location getLocation(const HttpRequest &req, servers_it &serverConf)
+{
   std::string requestedLocationName =
       req.findlocationOfUrl(req.getPath(), serverConf);
   Location location = serverConf->at(requestedLocationName);
