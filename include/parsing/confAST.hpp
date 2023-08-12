@@ -2,11 +2,6 @@
 #include <iostream>
 #include "confTypes.hpp"
 
-
-
-
-
-
 class Location {
     private:
         directives_t    _directives;
