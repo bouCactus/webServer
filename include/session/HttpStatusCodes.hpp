@@ -58,6 +58,7 @@ public:
         statusCodes[HTTP_BAD_REQUEST] = "Http Bad Request";
         statusCodes[HTTP_REQUESTURITOOLONG] = "Http Request URI Too Long";
         statusCodes[HTTP_REQUESTENTITYTOOLARGE] = "Http Request Entity Too Large";
+        statusCodes[HTTP_NO_CONTENT] = "No Content";
         // Add more status codes as needed
     }
 

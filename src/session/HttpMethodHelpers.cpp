@@ -5,18 +5,31 @@
 
 bool resourceExists(Path &reqResource) { return (hfs::isExests(reqResource)); }
 
+// std::string getErrorPagePath(std::string status, const servers_it &serverConf){
+//    try{
+//     \
+//     values_t errors = serverConf->getErrorPage();
+//       errors[status]
+//     return (uploadPath);
+//   }catch(...){
+//     return "";
+//   }
+// }
 void createErrorPageResponse(const servers_it &serverConf, const int statCode,
                              HttpClient &client) {
   HttpResponse &res = client.res;
   std::stringstream body;
   std::string statusMessage = res.status.getStatusMessage(statCode);
   std::string serverName;
-
+  // std::string errorPage = getErrorPagePath("statCode", serverConf);
   serverName = serverConf->getServerNames().empty()
                    ? serverConf->getHost()
                    : *(serverConf->getServerNames().begin());
   res.defaultErrorResponse(statCode);
   res.appendHeader("Content-Type", "text/html");
+  // if (!errorPage.empty()){
+  //   res.setFilename(errorPage);        till aamarifa explain something to me
+  // }else{
   body << "<!DOCTYPE html><html><head><title>" << statCode << " "
        << statusMessage << "</title></head><body><h1><center>" << statCode
        << " " << statusMessage << "<hr>"
@@ -25,6 +38,8 @@ void createErrorPageResponse(const servers_it &serverConf, const int statCode,
   res.setBody(body.str());
   res.appendHeader("Content-length", TO_STRING(res.getBodySize()));
 }
+
+
 
 std::string getType(Path &reqResource) { // just temp
   std::map<std::string, std::string> types;
@@ -44,6 +59,7 @@ std::string getType(Path &reqResource) { // just temp
     return ("application/octet-stream");
   return (it->second);
 }
+
 
 void createRegularFileResponse(Path &reqResource, const servers_it &serverConf,
                                HttpClient &client) {

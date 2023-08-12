@@ -22,10 +22,10 @@ namespace hfs = http::filesystem;
 #define MAX_CHARS_IN_PATH 2048
 
 struct FormDataPart {
-  string name;
-  string filename;
-  string content_type;
-  string value;
+  std::string name;
+  std::string filename;
+  std::string content_type;
+  std::string value;
   std::ofstream *fileStream;
   bool isFileOpen;
 };
@@ -38,7 +38,7 @@ public:
   HttpRequest &operator=(const HttpRequest &other);
   ~HttpRequest();
 
-  int parseRequest(const std::string rawData, servers_it &serverConf);
+  int parseRequest(char *rawData, size_t bytesread, servers_it &serverConf);
 
   // void printRaw(){
   //   std::cout <<  this->_method << " - " << this->_path.c_str() << " - " <<
@@ -64,6 +64,7 @@ public:
   std::map<std::string, std::string> &getHeaders();
   size_t getContentLength() const;
   std::vector<FormDataPart> getFormDataPart() const;
+  std::string getUploadPath(servers_it &serverConf);
 
 private:
   std::string _method;
@@ -78,13 +79,14 @@ private:
   bool _resouceCreatedSyccessfully;
   std::vector<FormDataPart> _parsed_parts;
 
+  std::string getFileTypeFromContentType(std::string &contentType);
   void processRequestHeaders(); // it is not good idea (bool)
   bool processRequestBodyContent(servers_it &serverConf);
-  bool parseChunkedEncoding();
-  bool parseBoundaryChunk(std::string &boundary);
-  bool prepareFileForPostRequest();
-  bool prepareFileForPostRequest(FormDataPart &part);
-  bool storeChunkToFile(std::string &chunk);
+  bool parseChunkedEncoding(servers_it &serverConf);
+  bool parseBoundaryChunk(std::string &boundary, servers_it &serverConf);
+  bool prepareFileForPostRequest(servers_it &serverConf);
+  bool prepareFileForPostRequest(FormDataPart &part, servers_it &serverConf);
+  bool storeChunkToFile(std::string &chunk, servers_it &serverConf);
   void parseMultipartFileContent(const std::string &content, size_t start,
                                  size_t end);
   int checkRequestErrors(servers_it &serverConf);

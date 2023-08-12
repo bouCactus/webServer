@@ -5,3 +5,6 @@
 # @bouCactus: I think resources/conf should be in new directory called example, isn't it better 
 # ![myfile](https://media.tenor.com/51L86w94i2UAAAAd/you-know.gif)
  WELL DONE!.
+
+# @bouCactus:
+ check boundray if filename not exist 

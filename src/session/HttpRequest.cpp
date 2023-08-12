@@ -2,6 +2,8 @@
 #include "CGI.hpp"
 #include "HttpClient.hpp"
 #include "fileSystem.hpp"
+#include "HttpTypes.hpp"
+#include "HttpServer.hpp"
 #include <fstream>
 HttpRequest::HttpRequest(void) {
   std::cout << "Resquest: constructor not implemented yet" << std::endl;
@@ -114,20 +116,48 @@ std::ofstream *createFile(const std::string &name) {
 std::string generateUniqueName() {
 
   time_t t = time(0);
-  return ("/tmp/upload_temp_" + std::to_string(t));
+  return (std::to_string(t));
 };
 
-bool HttpRequest::prepareFileForPostRequest() {
+std::string HttpRequest::getUploadPath(servers_it &serverConf){
+  try{
+    std::string pathLocation = this->findlocationOfUrl(this->_path,serverConf);
+    Location location = serverConf->at(pathLocation);
+    value_t uploadPath = location.getUploadPath();
+    return (uploadPath);
+  }catch(...){
+    return "";
+  }
+}
 
-  // Get the location for file upload
+std::string HttpRequest::getFileTypeFromContentType(std::string &contentType){
+  
+  std::map<std::string, std::string> types;
+  std::map<std::string, std::string>::iterator it;
+    types["text/html"] = "html";
+    types["text/css"] = "css";
+    types["image/jpeg"] = "jpg";
+    types["application/javascript"] = "js";
+    types["text/plain"] = "txt";
+    types["video/mp4"] = "mp4";
+    types["video/x-msvideo"] = "avi";
+    it = types.find(contentType);
+    if (it == types.end())
+      return ("");
+    return (it->second);
+}
+
+bool HttpRequest::prepareFileForPostRequest(servers_it &serverConf) {
   FormDataPart part;
+  std::string &contentType = headers["Content-Type"];
+  // Get the location for file upload
+  std::string uploadPath = getUploadPath(serverConf);
   std::string fileNameGenerate = generateUniqueName();
-  part.name = fileNameGenerate;
-  part.filename =
-      fileNameGenerate /* | this.getFileNameUPloaded */; // You can modify this
-                                                         // to get it from
-                                                         // contentType
+  std::string fileExtension = getFileTypeFromContentType(contentType);
 
+  part.name = fileNameGenerate;
+  part.filename = uploadPath + "/uploadedFile" + fileNameGenerate + "." + fileExtension; 
+  part.content_type = headers["Content-Type"];
   part.fileStream = createFile(part.filename);
   if (part.fileStream == NULL) {
     setResourceCreatedSuccessfully(false);
@@ -138,6 +168,30 @@ bool HttpRequest::prepareFileForPostRequest() {
   return true;
 }
 
+bool HttpRequest::prepareFileForPostRequest(FormDataPart &part, servers_it &serverConf) {
+  std::string uploadPath = getUploadPath(serverConf);
+  if (!part.filename.empty()){
+     hfs::Path tmpPath(part.filename);
+     if (tmpPath.has_extension()){
+        part.filename =  uploadPath + part.filename;
+     }else{
+        std::string fileExtension = getFileTypeFromContentType(part.content_type);
+        part.filename =  uploadPath + part.name;
+     }
+  }else if(!part.name.empty()){
+     part.filename = uploadPath + part.name ;
+  }
+  // TODO
+  // check if file or just text
+  part.fileStream = createFile(part.filename);
+  if (!part.fileStream){
+    setResourceCreatedSuccessfully(false);
+    return (false);
+  }
+  setResourceCreatedSuccessfully(true);
+  return (true);
+}
+
 void HttpRequest::closeFile() {
   if (!_parsed_parts.empty()) {
     FormDataPart part = _parsed_parts.back();
@@ -145,9 +199,9 @@ void HttpRequest::closeFile() {
   }
 }
 
-bool HttpRequest::storeChunkToFile(std::string &chunk) {
+bool HttpRequest::storeChunkToFile(std::string &chunk, servers_it &serverConf) {
   if (_parsed_parts.empty()) {
-    if (!prepareFileForPostRequest()) {
+    if (!prepareFileForPostRequest(serverConf)) {
       setResourceCreatedSuccessfully(false);
       return false;
     }
@@ -158,7 +212,7 @@ bool HttpRequest::storeChunkToFile(std::string &chunk) {
   return true;
 }
 
-bool HttpRequest::parseChunkedEncoding() {
+bool HttpRequest::parseChunkedEncoding(servers_it &serverConf) {
   while (!_requestBuffer.empty()) {
     if (_chunkSize == static_cast<size_t>(-1)) {
       size_t lineEnd = _requestBuffer.find("\r\n");
@@ -183,7 +237,7 @@ bool HttpRequest::parseChunkedEncoding() {
 
     if (_requestBuffer.length() >= _chunkSize + 2) {
       std::string chunkData = _requestBuffer.substr(0, _chunkSize);
-      storeChunkToFile(chunkData);
+      storeChunkToFile(chunkData, serverConf );
       _requestBuffer.erase(0, _chunkSize + 2);
       _chunkSize = static_cast<size_t>(-1);
     } else {
@@ -195,8 +249,8 @@ bool HttpRequest::parseChunkedEncoding() {
 
 FormDataPart parseMultipartFormData(std::string &headers) {
   FormDataPart part;
+ 
   std::stringstream ss(headers);
-
   std::string line;
   while (std::getline(ss, line)) {
     if (line.substr(0, 19) == "Content-Disposition") {
@@ -216,18 +270,7 @@ FormDataPart parseMultipartFormData(std::string &headers) {
   return part;
 }
 
-bool HttpRequest::prepareFileForPostRequest(FormDataPart &part) {
-  std::string fileName;
 
-  fileName = part.name; // for now replace with filename
-  // TODO
-  // check if file or just text
-  part.fileStream = createFile(fileName);
-  if (!part.fileStream)
-    return (false);
-
-  return (true);
-}
 
 void HttpRequest::parseMultipartFileContent(const std::string &content,
                                             size_t start, size_t end) {
@@ -242,7 +285,7 @@ void HttpRequest::parseMultipartFileContent(const std::string &content,
   }
 }
 
-bool HttpRequest::parseBoundaryChunk(std::string &boundary) {
+bool HttpRequest::parseBoundaryChunk(std::string &boundary, servers_it &serverConf) {
   const std::string boundaryPrefix = "--" + boundary + "\r\n";
   const std::string boundarySuffix = boundary + "--" + "\r\n";
   const size_t boundaryPrefixLength = boundaryPrefix.length();
@@ -260,7 +303,7 @@ bool HttpRequest::parseBoundaryChunk(std::string &boundary) {
           boundaryPrefixLength, endOfHeaders - boundaryPrefixLength);
       FormDataPart part = parseMultipartFormData(removeBoundary);
       _requestBuffer.erase(0, endOfHeaders + 4); // 4 = endOfHeaders.length();
-      prepareFileForPostRequest(part);
+      prepareFileForPostRequest(part, serverConf);
       _parsed_parts.push_back(part);
     } else if (nextBoundaryPos != std::string::npos) {
       parseMultipartFileContent(_requestBuffer, 0,
@@ -293,7 +336,7 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
   if (transferEncoding == "chunked") {
     // Process chunked data
     std::cout << "|+|==============chunked==================|+|" << std::endl;
-    return parseChunkedEncoding();
+    return parseChunkedEncoding(serverConf);
   } else if (!contentLength.empty()) {
     _contentLength += _requestBuffer.size();
     size_t boundaryPos = contentType.find(boundaryPrefix);
@@ -303,18 +346,19 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
       http::filesystem::Path requestedResource =
           this->getPathWRoot(this->getPath(), serverConf);
       if (hasCGI(requestedResource, *this, serverConf)) {
-        if (storeChunkToFile(_requestBuffer)) {
+        if (storeChunkToFile(_requestBuffer, serverConf)) {
           _requestBuffer.clear();
         }
       } else {
         std::string boundary =
             contentType.substr(boundaryPos + boundaryPrefix.size());
-        return parseBoundaryChunk(boundary);
+        std::cout << "|+|==============boundary==================|+|" << std::endl;
+        return parseBoundaryChunk(boundary, serverConf);
       }
     }
-
+  std::cout << "|+|==============content length==================|+|" << std::endl;
     // Process content with known length
-    if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer)) {
+    if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer, serverConf)) {
       _requestBuffer.clear();
     }
     // Do something when body overflow
@@ -364,18 +408,21 @@ int HttpRequest::checkRequestErrors(servers_it &serverConf) {
   return ACCURATE;
 }
 
-int HttpRequest::parseRequest(const std::string rawData,
+int HttpRequest::parseRequest(char *rawData, size_t bytesread,
                               servers_it &serverConf) {
-  _requestBuffer += rawData;
-
+  // _requestBuffer += rawData;
+  _requestBuffer.append(rawData, bytesread);
+  
   if (!_headersProcessed) {
     // Process request headers only if they haven't been parsed yet
     processRequestHeaders();
   }
-  // int errorFound = checkRequestErrors(serverConf);
-  // if (errorFound)
-  //     return (errorFound);
-  // Process the request body
+  // // int errorFound = checkRequestErrors(serverConf);
+  // // if (errorFound)
+  // //     return (errorFound);
+  // // Process the request body
+  
+  
   return processRequestBodyContent(serverConf);
 }
 

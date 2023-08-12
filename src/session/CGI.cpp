@@ -233,7 +233,7 @@ void setHeaders(HttpClient &client, std::string &filename) {
       res.setStatus(getStatusCode(value));
       isStatusSet = 1;
     } else {
-      std::cout << "key : [" << key << "] value [" << value << "]\n";
+      // std::cout << "key : [" << key << "] value [" << value << "]\n";
       res.appendHeader(key, value); // WHY THE HELL THIS NOT WORKING!!!!!!!!!!!
     }
     // getline(out, line);

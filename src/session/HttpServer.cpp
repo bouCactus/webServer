@@ -215,10 +215,13 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds) {
   }
   return 0;
 }
+
+
 // static int counter = 0;
 // static int counterWrite = 0;
 void HttpServer::checkForReading(fd_set &tempReadfds) {
   // std::cout << "reading.. cleints size: "<< _clients.size() <<  "\n";
+  
   for (client_it client = _clients.begin(); client != _clients.end();
        ++client) {
     int clientSocket = (*client)->getSocket();
@@ -227,8 +230,8 @@ void HttpServer::checkForReading(fd_set &tempReadfds) {
       /*** Handle data received from client. ***/
       //   std::cout << "id:" << (*client)->getSocket() << std::endl;
       char buffer[MAX_BUFFER_SIZE];
-      int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-      // std::cout << "bytesRead" << bytesRead << std::endl;
+      int bytesRead = recv(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
+      std::cout << "---------------bytesRead------------[]" << bytesRead << std::endl;
       if (std::string(buffer).find("0\r\n\r\n") != std::string::npos) {
         FD_CLR(clientSocket, &readfds);
         FD_SET(clientSocket, &writefds);
@@ -246,17 +249,17 @@ void HttpServer::checkForReading(fd_set &tempReadfds) {
         // Remove the client from the list.
         this->removeClient(client);
       } else if (bytesRead == 0) {
-        // client->req.setRequestEnd(true);
-        // std::cout << "``````````````Client disconnected. Client socket: "
-        //<< clientSocket << "``````````````" << std::endl;
+        std::cout << "``````````````Client disconnected. Client socket: "
+        << clientSocket << "``````````````" << std::endl;
         // close(clientSocket);
         FD_CLR(clientSocket, &readfds);
         FD_SET(clientSocket, &writefds);
       } else {
         /*** Process the received data. ***/
-        buffer[bytesRead] = '\0';
+        // buffer[bytesRead] = '\0';
+        
         servers_it serverConf = (*client)->getConfiguration();
-        if ((*client)->req.parseRequest(buffer, serverConf)) {
+        if ((*client)->req.parseRequest(buffer, bytesRead, serverConf)) {
           (*client)->processRequest(serverConf);
           (*client)->setRequestComplete(true);
           (*client)->req.closeFile();
