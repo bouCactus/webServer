@@ -234,6 +234,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       }
       client.setTimeOut(time(0));
       int pid = fork();
+      
       if (pid == -1)
         throw 500;
       if (pid == 0)
@@ -247,6 +248,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
         dup2(fd, 2);
         if (inFile)
           dup2(inFile, 0);
+       
         arg[0] = (char *)CGIScript.c_str();
         arg[1] = (char *)reqResource.c_str();
         arg[2] = NULL;

@@ -8,6 +8,7 @@
 #include <ctime>
 #include <netinet/in.h>
 #include <signal.h>
+#include <sys/signal.h>
 #include <unistd.h>
 #include "utilsFunction.hpp"
 #include <fstream>
@@ -68,6 +69,10 @@ void HttpClient::clean(std::list<HttpClient*> &clients) {
 }
 
 HttpClient::~HttpClient() {
+  if (this->res.getProccessPID() != -1)
+  {
+    kill(this->res.getProccessPID(), SIGKILL);
+  }
 }
 
 int HttpClient::sendFileResponse(HttpResponse &res, int socket ) {

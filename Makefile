@@ -46,9 +46,9 @@ get_filename = $(notdir $1)
 	@$(call PRINT_PROGRESS,$(CURRENTFILE),$(TOTAL_FILES),$(BAR_WIDTH),$(call get_filename,$<))
 
 all: $(NAME)
-	@echo "${COLOR_GREEN}*************** DONE *************************${COLOR_RESET}"
-	@echo "run ${COLOR_GREEN}./${BIN}/${NAME}${COLOR_RESET} to execute program"
-	@echo "${COLOR_GREEN}**********************************************${COLOR_RESET}"
+	@echo "${COLOR_GREEN}*************** DONE *********************${COLOR_RESET}"
+	@echo "run ${COLOR_GREEN}./${NAME}${COLOR_RESET} to execute program"
+	@echo "${COLOR_GREEN}******************************************${COLOR_RESET}"
 	
 
 $(NAME): $(OBJ)

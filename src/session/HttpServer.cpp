@@ -1,6 +1,8 @@
 #include "HttpClient.hpp"
 #include "HttpTypes.hpp"
 #include "confTypes.hpp"
+#include <signal.h>
+#include <sys/signal.h>
 
 HttpServer::HttpServer() {}
 
@@ -394,5 +396,4 @@ void HttpServer::removeClient(client_it &client)
   HttpClient *temp = *client;
   client = _clients.erase(client);
   delete temp;
-
 }
