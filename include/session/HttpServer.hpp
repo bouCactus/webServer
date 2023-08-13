@@ -33,9 +33,9 @@ class HttpServer
         /*********** Setting up and Starting the HttpServer ************/
         /***************************************************************/
         int     createNewSocket();
-        void    setupServers(servers_it &server, int socket, const std::string& port);
+        int     setupServers(servers_it &server, int socket, const std::string& port);
         int     biding_socket(servers_it &server, int &socket, const char* port);
-        void    start();
+        void    start(HttpServer &httpServer);
 
         bool    waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds);
         int     acceptIncomingConnection(fd_set &tempReadfds);

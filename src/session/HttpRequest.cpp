@@ -126,7 +126,7 @@ std::string HttpRequest::getUploadPath(servers_it &serverConf){
     value_t uploadPath = location.getUploadPath();
     //std::cout << "uploadPath: " << uploadPath << std::endl;
     if (!hfs::isExests(uploadPath)){
-      throw InternalServerError();
+      throw 500; //InternalServerError()
     }
     return (uploadPath);
 }
@@ -149,6 +149,7 @@ std::string HttpRequest::getFileTypeFromContentType(std::string &contentType){
 }
 
 bool HttpRequest::prepareFileForPostRequest(servers_it &serverConf) {
+  std::cout << "prepareFileforpostrewuest----------" << std::endl;
   FormDataPart part;
   std::string &contentType = headers["Content-Type"];
   // Get the location for file upload
@@ -157,7 +158,10 @@ bool HttpRequest::prepareFileForPostRequest(servers_it &serverConf) {
   std::string fileExtension = getFileTypeFromContentType(contentType);
 
   part.name = fileNameGenerate;
-  part.filename = uploadPath + "/uploadedFile" + fileNameGenerate + "." + fileExtension; 
+  part.filename = uploadPath + "/uploadedFile" + fileNameGenerate;
+  if (!fileExtension.empty()){
+    part.filename.append("." + fileExtension);
+  }
   part.content_type = headers["Content-Type"];
   part.fileStream = createFile(part.filename);
   if (part.fileStream == NULL) {
@@ -224,8 +228,7 @@ bool HttpRequest::parseChunkedEncoding(servers_it &serverConf) {
 
       char *endPtr;
       _chunkSize = std::strtoul(chunkSizeStr.c_str(), &endPtr, 16);
-      if (endPtr !=
-          chunkSizeStr.c_str() + lineEnd) // Check if the parsing was successful
+      if (endPtr != chunkSizeStr.c_str() + lineEnd) // Check if the parsing was successful
         break;
 
       _requestBuffer.erase(0, lineEnd + 2);
@@ -336,7 +339,7 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
 
   if (transferEncoding == "chunked") {
     // Process chunked data
-    //std::cout << "|+|==============chunked==================|+|" << std::endl;
+    // std::cout << "|+|==============chunked==================|+|" << std::endl;
     return parseChunkedEncoding(serverConf);
   } else if (!contentLength.empty()) {
     _contentLength += _requestBuffer.size();
@@ -353,17 +356,17 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
       } else {
         std::string boundary =
             contentType.substr(boundaryPos + boundaryPrefix.size());
-        //std::cout << "|+|==============boundary==================|+|" << std::endl;
+        // std::cout << "|+|==============boundary==================|+|" << std::endl;
         return parseBoundaryChunk(boundary, serverConf);
       }
     }
-  // //std::cout << "|+|==============content length==================|+|" << std::endl;
+  // std::cout << "|+|==============content length==================|+|" << std::endl;
     // Process content with known length
     if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer, serverConf)) {
       _requestBuffer.clear();
     }
     // Do something when body overflow
-    return (_contentLength == static_cast<size_t>(std::stoi(contentLength)));
+    return (_contentLength >= static_cast<size_t>(std::stoi(contentLength)));
   }
   // No content or unsupported encoding
   return true;
@@ -372,42 +375,36 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
 bool HttpRequest::characterNotAllowed(const std::string &path) {
 
   // Allowed Characters:
-  // "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;="
-  // ASCII Codes:        [ 33 ] [ 35 ] [ 36 ] [ 38---59 ] [ 61 ] [ 63---91 ] [
-  // 93 ] [ 95 ] [ 97---122 ] [ 126 ]
+  std::string allowedChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=";
 
   for (size_t i = 0; i < path.size(); i++) {
-    if (path[i] != 33 and path[i] != 35 and path[i] != 36 and
-        !(path[i] >= 38 && path[i] <= 59) and path[i] != 61 and
-        !(path[i] >= 63 && path[i] <= 91) and path[i] != 93 and
-        path[i] != 95 and !(path[i] >= 97 && path[i] <= 122) and
-        path[i] != 126) {
+    if (allowedChar.find(path[i]) == string::npos)
       return (true);
-    }
   }
   return (false);
 }
 
-int HttpRequest::checkRequestErrors(servers_it &serverConf) {
+void HttpRequest::checkRequestErrors(servers_it &serverConf) {
   const std::string &contentLength = headers["Content-Length"];
   const std::string &transferEncoding = headers["Transfer-Encoding"];
   const std::string &maxBodySize = serverConf->getMax();
 
+      std::cout << std::atoi(contentLength.c_str()) << "  |  " << std::atoi(contentLength.c_str()) << std::endl;
   if (!transferEncoding.empty() && transferEncoding != "chunked") {
-    return NOT_IMPLEMENTED;
+    throw NOT_IMPLEMENTED;
   } else if (transferEncoding.empty() && contentLength.empty() &&
-             this->getMethod() == "POST") {
-    return BAD_REQUEST;
+            this->getMethod() == "POST") {
+    throw BAD_REQUEST;
   } else if (characterNotAllowed(this->getPath().c_str())) {
-    return BAD_REQUEST;
+    throw BAD_REQUEST;
   } else if (strlen(this->getPath().c_str()) > MAX_CHARS_IN_PATH) {
-    return REQUESTURITOOLONG;
+    throw REQUESTURITOOLONG;
   } else if (std::atoi(contentLength.c_str()) >
-             std::atoi(maxBodySize.c_str()) * 1e6) {
-    return REQUESTURITOOLONG;
+            std::atoi(maxBodySize.c_str()) * 1e6) {
+    throw REQUESTURITOOLONG;
   }
-  return ACCURATE;
 }
+
 
 int HttpRequest::parseRequest(char *rawData, size_t bytesread,
                               servers_it &serverConf) {
@@ -417,13 +414,10 @@ int HttpRequest::parseRequest(char *rawData, size_t bytesread,
   if (!_headersProcessed) {
     // Process request headers only if they haven't been parsed yet
     processRequestHeaders();
+    checkRequestErrors(serverConf);
   }
-  // // int errorFound = checkRequestErrors(serverConf);
-  // // if (errorFound)
-  // //     return (errorFound);
-  // // Process the request body
   
-  
+  // Process the request body
   return processRequestBodyContent(serverConf);
 }
 

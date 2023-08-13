@@ -61,6 +61,19 @@ void HttpClient::clean() {
   this->res.clean();
 }
 
+void HttpClient::clean(std::list<HttpClient*> &clients) {
+  if (this->res.getProccessPID() != -1) {
+    std::cout << ">>>>>>>>>>> this is the KILER !!!!!!\n";
+    kill(this->res.getProccessPID(), SIGKILL);
+  }
+  std::vector<int> clientSockets;
+  std::list<HttpClient*>::iterator client = clients.begin();
+  for (; client != clients.end(); client++) {
+    clientSockets.push_back((*client)->getSocket());
+  }
+  this->res.clean(clientSockets);
+}
+
 HttpClient::~HttpClient() {
   // clean();
   // //std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";

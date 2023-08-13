@@ -49,6 +49,7 @@ public:
   // bool	ReadyTo_Read();
   // bool	ReadyTo_Write();
   void clean();
+  void clean(std::list<HttpClient*> &clients);
   void setIndexPath(hfs::Path &path);
   hfs::Path &getIndexPath();
   void setTimeOut(time_t time);

@@ -89,7 +89,7 @@ private:
   bool storeChunkToFile(std::string &chunk, servers_it &serverConf);
   void parseMultipartFileContent(const std::string &content, size_t start,
                                  size_t end);
-  int checkRequestErrors(servers_it &serverConf);
+  void checkRequestErrors(servers_it &serverConf);
   bool characterNotAllowed(const std::string &path);
 };
 

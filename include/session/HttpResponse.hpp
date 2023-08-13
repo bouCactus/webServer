@@ -45,6 +45,7 @@ class HttpResponse {
     void writeHeader(int satuts, Smap_t &header);
     void setCGIFile(int fd, std::string path);
     void clean();
+    void clean(std::vector<int> &clientSockets);
     std::pair<int, std::string> getCGIFile();
     int getProccessPID();
     void setProccessPID(int pid);

@@ -12,7 +12,7 @@ int	main(int ac, char** av) {
 		/*** Multiplexing ***/
 		servers_t	servers = conf.getServers();
 		HttpServer	httpServer(servers);
-		httpServer.start();
+		httpServer.start(httpServer);
 
 		// httpServer.closeServerSockets();
 	}

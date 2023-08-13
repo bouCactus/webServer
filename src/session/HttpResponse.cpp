@@ -20,6 +20,23 @@ void HttpResponse::clean() {
     unlink(getCGIFile().second.c_str());
 }
 
+void HttpResponse::clean(std::vector<int> &clientSockets) {
+  // close the temp file of CGI if there is one.
+  if (getCGIFile().first != 0) {
+    std::vector<int>::iterator it;
+    int fd = getCGIFile().first;
+    it = std::find(clientSockets.begin(),clientSockets.end(),fd);
+    if (it == clientSockets.end()) {
+      close(fd);
+    }
+    // std::cout << "{{{{{{{{{{{{{{" << *clientSocket <<" }}}}}}}}}}}}}}}}}}}}}}}\n";
+    std::cout << "------{{ "<<fd<<" is closed }}------\n";
+  }
+
+  if (!getCGIFile().second.empty())
+    unlink(getCGIFile().second.c_str());
+}
+
 HttpResponse::HttpResponse(const HttpResponse &other){
     // //std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;

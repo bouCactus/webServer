@@ -29,8 +29,8 @@ HttpServer::~HttpServer()
 /********************** Setting up the HttpServer ***********************/
 /************************************************************************/
 
-HttpServer::HttpServer(servers_t &servers) : maxFileDescriptor(0)
-{
+HttpServer::HttpServer(servers_t &servers)
+ : serversNotConnected(0), maxServerSockets(0), maxFileDescriptor(0) {
 
   /*** Initializes the file descriptor sets to contain no file descriptors. ***/
   FD_ZERO(&readfds);
@@ -42,19 +42,25 @@ HttpServer::HttpServer(servers_t &servers) : maxFileDescriptor(0)
   {
     ports = server->getPorts();
     values_it itPorts = ports.begin();
-    for (; itPorts != ports.end(); itPorts++)
-    {
-      int serverSocket = createNewSocket();
-      setupServers(server, serverSocket, *itPorts);
+    for (; itPorts != ports.end(); itPorts++) {
+      int serverSocket = createNewSocket(); /* A value of -1 means that creation failed. */
+      if (serverSocket == -1 || setupServers(server, serverSocket, *itPorts)) {
+        serversNotConnected++;
+        continue;
+      }
       serverSockets.insert(serverConf(serverSocket, server));
       /*** Set the max-File-Descriptor. ***/
       maxFileDescriptor = std::max(maxFileDescriptor, serverSocket);
+
+      /*** Socket Creation logs ***/
+
     }
     /*** Find out the number of server sockets to be created. ***/
     maxServerSockets += server->getPorts().size();
   }
-  if (serversNotConnected == maxServerSockets)
-  {
+  // std::cout << "servers not connected: " << serversNotConnected 
+  //           << "     max server sockets: " << maxServerSockets << std::endl;
+  if (serversNotConnected == maxServerSockets) {
     throw ServersNotConnected();
   }
 }
@@ -64,20 +70,20 @@ int HttpServer::createNewSocket()
 
   /*** Create a socket for the server ***/
   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-  fcntl(serverSocket, F_SETFL, O_NONBLOCK);
-  if (serverSocket == -1)
-  {
-    std::cerr << "Error creating socket" << std::endl;
-    throw HttpError(*this, errno);
+  int flag = fcntl(serverSocket, F_GETFL, 0);
+  fcntl(serverSocket, F_SETFL, flag | O_NONBLOCK);
+  if (serverSocket == -1) {
+    // std::cerr << "Error creating socket" << std::endl;
+    return (-1);
   }
 
   /*** Allows local addresses that are already in use to be bound ***/
   int yes = 1;
-  if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) ==
-      -1)
-  {
-    std::cerr << "Error set socket option [" << serverSocket << "] : ";
-    throw HttpError(*this, errno);
+  if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1 ||
+      setsockopt(serverSocket, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes)) == -1) {
+    // std::cerr << "Error set socket option [" << serverSocket << "] : ";
+    return (-1);
+    // throw HttpError(*this, errno);
   }
   return (serverSocket);
 }
@@ -123,44 +129,41 @@ int HttpServer::biding_socket(servers_it &server, int &socket,
     }
   }
   freeaddrinfo(result);
-  return (1);
+  return (1); /* Failure */
 }
 
-void HttpServer::setupServers(servers_it &server, int serverSocket,
-                              const std::string &port)
-{
+int HttpServer::setupServers(servers_it &server, int serverSocket,
+                              const std::string &port) {
   /*** Checking the Address structures to find the best possible match. ***/
   /******* Try each address until the socket is successfully bound. ********/
-  if (biding_socket(server, serverSocket, port.c_str()))
-  {
-    std::cerr << "Error binding socket [" << server->getHost().c_str() << ":"
-              << port.c_str() << "] : ";
+  if (biding_socket(server, serverSocket, port.c_str())) {
+    std::cerr << "Error binding socket   ---- [" << server->getHost().c_str() << ":"
+              << port.c_str() << "]" << std::endl;
     close(serverSocket);
-    serversNotConnected++;
-    //std::cout << strerror(errno) << std::endl;
+    return 1; /* Failure */
   }
 
   /*** Listen for incoming connections. ***/
-  if (listen(serverSocket, 1) == -1)
-  {
-    std::cerr << "Error listening on socket : ";
+  if (listen(serverSocket, SOMAXCONN) == -1) {
+  std::cout << "Error listening on [" << serverSocket << "] ---- ["
+            << server->getHost().c_str() << ":" << port.c_str() << "]\n";
     close(serverSocket);
-    //std::cout << strerror(errno) << std::endl;
+    return 1; /* Failure */
   }
 
   // Add the server socket to the read fd set `readfds`.
   FD_SET(serverSocket, &readfds);
 
-  //std::cout << "Start listening on [" << serverSocket << "] ---- ["
-            // << server->getHost().c_str() << ":" << port.c_str() << "]\n";
+  std::cout << "Start listening on [" << serverSocket << "] ---- ["
+            << server->getHost().c_str() << ":" << port.c_str() << "]\n";
+  return (0); /* Success */
 }
 
 /************************************************************************/
 /*********************** Starting the HttpServer ************************/
 /************************************************************************/
 
-void HttpServer::start()
-{
+void HttpServer::start(HttpServer	&httpServer) {
   /*** Start the server ***/
 
   while (true)
@@ -169,37 +172,38 @@ void HttpServer::start()
     fd_set tempWritefds = writefds;
 
     /*** Wait for any activity on the file descriptors. ***/
-    // try {
-    if (waitingForActivity(tempReadfds, tempWritefds))
-    {
-      // //std::cout << "Connection done\n";
+    if (waitingForActivity(tempReadfds, tempWritefds)) {
+      // std::cout << "Connection done\n";
 
       /*** Check for activity on the server socket. ***/
       if (acceptIncomingConnection(tempReadfds) == -1)
         continue;
-      // //std::cout << "Incoming Connection Accepted.\n";
 
       /*** Check for activity on client sockets and read from it. ***/
       checkForReading(tempReadfds);
       /*** Check for activity on client sockets for writing response. ***/
       checkForWriting(tempWritefds);
-      //   //std::cout << "dora" << std::endl;
     }
-    // } catch (...) {
-    //   //std::cout << "what ever.........------------" << std::endl;
-    //   exit(1);
-    // }
+    else {
+      /*** Restart the server in case of select() failure. ***/
+      FD_ZERO(&readfds);
+      // FD_ZERO(&writefds);
+      serverSock_it serverSocket = httpServer.getServerSockets().begin();
+      serverSock_it it_end = httpServer.getServerSockets().end();
+      for (; serverSocket != it_end; ++serverSocket) {
+        FD_SET(serverSocket->first, &readfds);
+      }
+    }
   }
 }
 
 bool HttpServer::waitingForActivity(fd_set &tempReadfds, fd_set &tempWritefds)
 {
-  int activity =
-      select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, NULL);
+  int activity = select(maxFileDescriptor + 1, &tempReadfds, &tempWritefds, NULL, NULL);
   if (activity == -1)
   {
-    // std::cerr << "Error select : \n ";
-    throw HttpError(*this, errno);
+    std::cerr << "Error select.";
+    return (-1);
   }
   return activity;
 }
@@ -225,7 +229,8 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
         perror(strerror(errno));
         return -1;
       }
-      fcntl(newSocket, F_SETFL, O_NONBLOCK);
+      int flag = fcntl(newSocket, F_GETFL, 0);
+      fcntl(newSocket, F_SETFL, flag | O_NONBLOCK);
 
       /*** Create new Client. ***/
       //   //std::cout << "newClient" << std::endl;
@@ -244,9 +249,6 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
   return 0;
 }
 
-
-// static int counter = 0;
-// static int counterWrite = 0;
 void HttpServer::checkForReading(fd_set &tempReadfds)
 {
   // //std::cout << "reading.. cleints size: "<< _clients.size() <<  "\n";
@@ -284,11 +286,12 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
       else if (bytesRead == 0)
       {
         // client->req.setRequestEnd(true);
-        // //std::cout << "``````````````Client disconnected. Client socket: "
-        //<< clientSocket << "``````````````" << std::endl;
-        // close(clientSocket);
+        // std::cout << "``````````````Client disconnected. Client socket: "
+        // << clientSocket << "``````````````" << std::endl;
+        close(clientSocket);
         FD_CLR(clientSocket, &readfds);
-        FD_SET(clientSocket, &writefds);
+        FD_CLR(clientSocket, &writefds);
+        this->removeClient(client);
       }
       else
       {
@@ -296,7 +299,7 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
         // buffer[bytesRead] = '\0';
         
         servers_it serverConf = (*client)->getConfiguration();
-        try{
+        try {
         if ((*client)->req.parseRequest(buffer, bytesRead, serverConf)) {
           (*client)->processRequest(serverConf);
           (*client)->setRequestComplete(true);
@@ -304,9 +307,9 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
           FD_CLR(clientSocket, &readfds);
           FD_SET(clientSocket, &writefds);
         }
-        }catch(std::exception e){
+        } catch(int statusCode) {
           //std::cout << e.what() << std::endl;
-           createErrorPageResponse(serverConf, 500, *(*client));
+           createErrorPageResponse(serverConf, statusCode, *(*client));
           (*client)->setRequestComplete(true);
           (*client)->req.closeFile();
           FD_CLR(clientSocket, &readfds);
@@ -341,29 +344,24 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
         {
           bytesSent = (*client)->sendFileResponse((*client)->res,
                                                   (*client)->getSocket());
-        }
-        else
-        {
+        } else {
           // //std::cout << "normal sendResponse" << std::endl;
           bytesSent = (*client)->sendResponse();
         }
 
-        if (bytesSent == -1 || (*client)->isRespondComplete())
-        {
+        if (bytesSent == -1 || (*client)->isRespondComplete()) {
           if (bytesSent == -1)
           {
-            std::cerr << "Error sending response to client: " << strerror(errno)
-                      << std::endl;
-          }
-          else
-          {
+          //   std::cerr << "Error sending response to client: " << strerror(errno)
+          //             << std::endl;
+          } else {
             // Remove the client and clear its socket from the fd-sets.
             // //std::cout << "Response sent to client socket and delete "
                       // << clientSocket << std::endl;
             // //std::cout << "Going to delete: "
             //           << (*client)->res.getCGIFile().second << "\n";
-            (*client)->clean();
           }
+          (*client)->clean(_clients);
           close(clientSocket);
           FD_CLR(clientSocket, &readfds);
           FD_CLR(clientSocket, &writefds);
