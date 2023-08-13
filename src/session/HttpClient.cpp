@@ -115,7 +115,7 @@ std::string shouldRedirect(const HttpClient &client,
     if (newLocation.size() <= 0) {
       return ("");
     }
-    return (*newLocation.begin()); // replace the string with real value
+    return (*(newLocation.begin() + 1)); // replace the string with real value
   } catch (...) {
     return ("");
   }
