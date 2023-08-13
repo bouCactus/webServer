@@ -19,7 +19,7 @@ int	main(int ac, char** av) {
 	catch(std::exception &e)
 	{
 		// WHATEVER!!
-		std::cout << e.what() << std::endl;
+		//std::cout << e.what() << std::endl;
 	}
 	return  (0);
 }

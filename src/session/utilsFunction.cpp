@@ -1,5 +1,5 @@
 #include "utilsFunction.hpp"
-
+#include "HttpClient.hpp"
 std::string getTimeGMT() {
     std::time_t now = std::time(NULL);
     char buffer[80];
@@ -18,4 +18,13 @@ std::string convertTimeToGMT(std::time_t time) {
     return (buffer);
 }
 
-
+void serverLog(HttpClient &client){
+    
+    std::map<std::string, std::string> &headers = client.req.getHeaders();
+    std::cout << "[" << headers["Host"] << " \""
+    << client.req.getMethod() << " " 
+    << client.req.getPath().c_str() << " "
+    << client.req.getVersion() << " \" " 
+    << client.res.getStatus() << " "
+    << client.res.getBodySize() << "]" << std::endl;
+}

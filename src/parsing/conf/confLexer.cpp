@@ -51,15 +51,15 @@ void	Lexer::skipEmptyLines(){
 void	Lexer::log(int print_source){
 	if (print_source)
 	{
-		std::cout << "Source: " << std::endl;
-		std::cout << this->_source << std::endl;
+		//std::cout << "Source: " << std::endl;
+		//std::cout << this->_source << std::endl;
 	}
 	std::cout <<"\n----------------------------------------\n";
-	std::cout << "| Current Char : ";
-	std::cout << this->_source[this->_current];
-	std::cout << "\tAt: line: " << this->_column;
-	std::cout << "\tposition: " << this->_current;
-	std::cout << " |" << std::endl;
+	//std::cout << "| Current Char : ";
+	//std::cout << this->_source[this->_current];
+	//std::cout << "\tAt: line: " << this->_column;
+	//std::cout << "\tposition: " << this->_current;
+	//std::cout << " |" << std::endl;
 	std::cout <<"----------------------------------------\n";
 };
 

@@ -9,19 +9,19 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <unistd.h>
-
+#include "utilsFunction.hpp"
 #include <fstream>
 int sendHeader(HttpResponse &res,
                int _socket /*_socket to not complicated things */) {
   std::stringstream st;
   std::string content;
-  // std::cout << "----------------->" << "\"" << res.getVersion() << "\"" <<
+  // //std::cout << "----------------->" << "\"" << res.getVersion() << "\"" <<
   // std::endl;
   st << res.getVersion() << " " << res.getStatus() << " "
      << res.status.getStatusMessage(res.getStatus()) << "\r\n"
      << res.getHeaders() << "\r\n";
   content = st.str();
-  // std::cout << "HEADER:: " << content << "\n";
+  // //std::cout << "HEADER:: " << content << "\n";
   return send(_socket, content.c_str(), content.size(), 0);
 }
 
@@ -30,7 +30,7 @@ hfs::Path &HttpClient::getIndexPath() { return _indexPath; }
 
 HttpClient::HttpClient(const HttpClient &httpClient) {
 
-  std::cout << "HttpClient:: >>> Copy Constructor called\n";
+  //std::cout << "HttpClient:: >>> Copy Constructor called\n";
   this->_socket = httpClient.getSocket();
   _conf = httpClient._conf;
   _isRequestComplete = false;
@@ -38,7 +38,7 @@ HttpClient::HttpClient(const HttpClient &httpClient) {
 }
 
 HttpClient &HttpClient::operator=(const HttpClient &httpClient) {
-  std::cout << "HttpClient::>>> Assignement operator called\n";
+  //std::cout << "HttpClient::>>> Assignement operator called\n";
   if (this != &httpClient) {
     this->_socket = httpClient.getSocket();
     _conf = httpClient._conf;
@@ -63,7 +63,7 @@ void HttpClient::clean() {
 
 HttpClient::~HttpClient() {
   // clean();
-  std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
+  // //std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
 }
 
 int HttpClient::sendFileResponse(HttpResponse &res,
@@ -79,6 +79,7 @@ int HttpClient::sendFileResponse(HttpResponse &res,
     bytesSent = send(socket, res.getBody().c_str(), res.getBody().size(), 0);
   }
   if (!_isHeaderSent) {
+    serverLog(*this);
     bytesSent = sendHeader(res, socket);
     _isHeaderSent = true;
   }
@@ -94,7 +95,7 @@ int HttpClient::sendFileResponse(HttpResponse &res,
   }
   // if (sizePos)
   bytesSent = send(socket, buffer, sizePos, 0);
-  std::cout << "IT SEND\n";
+  // //std::cout << "IT SEND\n";
   _writingPos += sizePos;
   return (bytesSent);
 }
@@ -139,7 +140,7 @@ void HttpClient::processRequest(servers_it &conf_S) {
     } else if (req.getMethod() == "DELETE") {
       method.processDeleteRequest(*this, conf_S);
     } else {
-      std::cout << "Handle unsupported HTTP method" << std::endl;
+      //std::cout << "Handle unsupported HTTP method" << std::endl;
     }
   }
 }
@@ -149,23 +150,23 @@ void HttpClient::setTimeOut(time_t time) { _timeOut = time; };
 time_t HttpClient::getTimeOut() const { return _timeOut; };
 
 int HttpClient::sendResponse() {
-  std::cout << "-------sending....---------------" << std::endl;
+  serverLog(*this);
   sendHeader(res, _socket);
   _isHeaderSent = true;
-  std::cout << "body = " << res.getBody() << " size: " << res.getBodySize()
-            << "\n";
+  // //std::cout << "body = " << res.getBody() << " size: " << res.getBodySize()
+  //           << "\n";
   int bytesSent = -1;
   // if (!res.getBody().empty())
   // bytesSent = send(_socket, "", 0, 0);
   bytesSent = send(_socket, res.getBody().c_str(), res.getBodySize(), 0);
-  std::cout << "IT IS ME!!!!!\n";
+  // //std::cout << "IT IS ME!!!!!\n";
   /*
     So weird that send exit the process if the body is empty!!!!
   */
 
   _isRespondComplete = true;
   _isHeaderSent = false;
-  std::cout << "response sent..." << std::endl;
+  // //std::cout << "response sent..." << std::endl;
   return (bytesSent);
 }
 
@@ -183,6 +184,7 @@ bool HttpClient::isRespondComplete() { return _isRespondComplete; }
 
 bool HttpClient::isRequestComplete() { return (_isRequestComplete); }
 void HttpClient::setRequestComplete(bool state) { _isRequestComplete = state; }
+
 
 /**********************************************************/
 /******************* Client Interaction *******************/

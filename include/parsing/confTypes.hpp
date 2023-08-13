@@ -96,7 +96,7 @@ typedef mapErrors_t::iterator mapErrors_it;
 #endif
 
 #if DEBUG
-#define LOG_THROW() std::cout << "[ throw ]: in " << __FILE__ << " (Line: " << __LINE__ << ").\n";
+#define LOG_THROW() //std::cout << "[ throw ]: in " << __FILE__ << " (Line: " << __LINE__ << ").\n";
 #else
 #define LOG_THROW()
 #endif

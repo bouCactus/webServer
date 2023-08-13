@@ -145,8 +145,8 @@ void setCGI(locations_it &l, values_t cgiList) {
 		}
     std::pair<CGIMap_it, bool> res =
         l->second.getCGI().insert(CGIMap_elm(key, value));
-    // std::cout << "key : " << key << "val : " << value << "\n";
-    // std::cout << "res sizae here is :" << l->second.getCGI().size() << "\n";
+    // //std::cout << "key : " << key << "val : " << value << "\n";
+    // //std::cout << "res sizae here is :" << l->second.getCGI().size() << "\n";
     if (!res.second) {
       LOG_THROW();
       throw Parse_error(*it + " " +
@@ -201,7 +201,7 @@ void Parser::parse_block(Token t) {
       directive_t directive = parse_directive();
       if (directive.first == "cgi_pass") {
         setCGI(_currentLocation, directive.second);
-        // std::cout << "size of CGI LIST : " <<
+        // //std::cout << "size of CGI LIST : " <<
         // _currentLocation->second.getCGI().size() << "\n";
 
       } else
@@ -233,8 +233,8 @@ servers_t Parser::operator()() {
     Token t = _lxr->getNextToken();
     parse_block(t);
   } catch (Parse_error &e) {
-    std::cout << "Error: " << e.what();
-    std::cout << " (Line : " << _lxr->_column + 1 << ").\n";
+    //std::cout << "Error: " << e.what();
+    //std::cout << " (Line : " << _lxr->_column + 1 << ").\n";
     exit(1);
   }
   return servers;

@@ -137,7 +137,7 @@ void HttpServer::setupServers(servers_it &server, int serverSocket,
               << port.c_str() << "] : ";
     close(serverSocket);
     serversNotConnected++;
-    std::cout << strerror(errno) << std::endl;
+    //std::cout << strerror(errno) << std::endl;
   }
 
   /*** Listen for incoming connections. ***/
@@ -145,14 +145,14 @@ void HttpServer::setupServers(servers_it &server, int serverSocket,
   {
     std::cerr << "Error listening on socket : ";
     close(serverSocket);
-    std::cout << strerror(errno) << std::endl;
+    //std::cout << strerror(errno) << std::endl;
   }
 
   // Add the server socket to the read fd set `readfds`.
   FD_SET(serverSocket, &readfds);
 
-  std::cout << "Start listening on [" << serverSocket << "] ---- ["
-            << server->getHost().c_str() << ":" << port.c_str() << "]\n";
+  //std::cout << "Start listening on [" << serverSocket << "] ---- ["
+            // << server->getHost().c_str() << ":" << port.c_str() << "]\n";
 }
 
 /************************************************************************/
@@ -172,21 +172,21 @@ void HttpServer::start()
     // try {
     if (waitingForActivity(tempReadfds, tempWritefds))
     {
-      // std::cout << "Connection done\n";
+      // //std::cout << "Connection done\n";
 
       /*** Check for activity on the server socket. ***/
       if (acceptIncomingConnection(tempReadfds) == -1)
         continue;
-      // std::cout << "Incoming Connection Accepted.\n";
+      // //std::cout << "Incoming Connection Accepted.\n";
 
       /*** Check for activity on client sockets and read from it. ***/
       checkForReading(tempReadfds);
       /*** Check for activity on client sockets for writing response. ***/
       checkForWriting(tempWritefds);
-      //   std::cout << "dora" << std::endl;
+      //   //std::cout << "dora" << std::endl;
     }
     // } catch (...) {
-    //   std::cout << "what ever.........------------" << std::endl;
+    //   //std::cout << "what ever.........------------" << std::endl;
     //   exit(1);
     // }
   }
@@ -228,7 +228,7 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
       fcntl(newSocket, F_SETFL, O_NONBLOCK);
 
       /*** Create new Client. ***/
-      //   std::cout << "newClient" << std::endl;
+      //   //std::cout << "newClient" << std::endl;
       HttpClient *newClient = new HttpClient((server->second), newSocket);
 
       addNewClient(newClient);
@@ -237,7 +237,7 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
        * max-File-Descriptor. ***/
       setNewFD(newSocket);
 
-      //   std::cout << "New connection established. Client socket: "
+      //   //std::cout << "New connection established. Client socket: "
       //<< newClient->getSocket() << std::endl;
     }
   }
@@ -249,7 +249,7 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
 // static int counterWrite = 0;
 void HttpServer::checkForReading(fd_set &tempReadfds)
 {
-  // std::cout << "reading.. cleints size: "<< _clients.size() <<  "\n";
+  // //std::cout << "reading.. cleints size: "<< _clients.size() <<  "\n";
   
   for (client_it client = _clients.begin(); client != _clients.end();
        ++client)
@@ -257,24 +257,24 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
     int clientSocket = (*client)->getSocket();
     if (FD_ISSET(clientSocket, &tempReadfds))
     {
-      // std::cout << "going to read the request\n";
+      // //std::cout << "going to read the request\n";
       /*** Handle data received from client. ***/
-      //   std::cout << "id:" << (*client)->getSocket() << std::endl;
+      //   //std::cout << "id:" << (*client)->getSocket() << std::endl;
       char buffer[MAX_BUFFER_SIZE];
       int bytesRead = recv(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
-      std::cout << "---------------bytesRead------------[]" << bytesRead << std::endl;
+      // //std::cout << "---------------bytesRead------------[]" << bytesRead << std::endl;
       if (std::string(buffer).find("0\r\n\r\n") != std::string::npos) {
         FD_CLR(clientSocket, &readfds);
         FD_SET(clientSocket, &writefds);
       }
-      // std::cout << buffer << "\n";
-      //  std::cout << " check for reading counter : " << counter++ <<
+      // //std::cout << buffer << "\n";
+      //  //std::cout << " check for reading counter : " << counter++ <<
       //  std::endl;
       if (bytesRead == -1)
       {
         std::cerr << "Error receiving data from client [" << clientSocket
                   << "] --> " << strerror(errno) << std::endl;
-        std::cout << close(clientSocket) << "\n";
+        close(clientSocket);
         FD_CLR(clientSocket, &readfds);
         FD_CLR(clientSocket, &writefds);
         (*client)->setClientInteraction(false);
@@ -284,7 +284,7 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
       else if (bytesRead == 0)
       {
         // client->req.setRequestEnd(true);
-        // std::cout << "``````````````Client disconnected. Client socket: "
+        // //std::cout << "``````````````Client disconnected. Client socket: "
         //<< clientSocket << "``````````````" << std::endl;
         // close(clientSocket);
         FD_CLR(clientSocket, &readfds);
@@ -296,8 +296,17 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
         // buffer[bytesRead] = '\0';
         
         servers_it serverConf = (*client)->getConfiguration();
+        try{
         if ((*client)->req.parseRequest(buffer, bytesRead, serverConf)) {
           (*client)->processRequest(serverConf);
+          (*client)->setRequestComplete(true);
+          (*client)->req.closeFile();
+          FD_CLR(clientSocket, &readfds);
+          FD_SET(clientSocket, &writefds);
+        }
+        }catch(std::exception e){
+          //std::cout << e.what() << std::endl;
+           createErrorPageResponse(serverConf, 500, *(*client));
           (*client)->setRequestComplete(true);
           (*client)->req.closeFile();
           FD_CLR(clientSocket, &readfds);
@@ -321,7 +330,7 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
         (*client)->isRequestComplete())
     {
       int tmpint = (*client)->res.getProccessPID();
-      // std::cout << "the pid of tmpint" << tmpint << std::endl;
+      // //std::cout << "the pid of tmpint" << tmpint << std::endl;
       if (tmpint == -1)
       {
         // Prepare and send a response to the client.
@@ -335,7 +344,7 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
         }
         else
         {
-          std::cout << "normal sendResponse" << std::endl;
+          // //std::cout << "normal sendResponse" << std::endl;
           bytesSent = (*client)->sendResponse();
         }
 
@@ -349,13 +358,13 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
           else
           {
             // Remove the client and clear its socket from the fd-sets.
-            std::cout << "Response sent to client socket and delete "
-                      << clientSocket << std::endl;
-            std::cout << "Going to delete: "
-                      << (*client)->res.getCGIFile().second << "\n";
+            // //std::cout << "Response sent to client socket and delete "
+                      // << clientSocket << std::endl;
+            // //std::cout << "Going to delete: "
+            //           << (*client)->res.getCGIFile().second << "\n";
             (*client)->clean();
           }
-          std::cout << close(clientSocket) << "\n";
+          close(clientSocket);
           FD_CLR(clientSocket, &readfds);
           FD_CLR(clientSocket, &writefds);
 
@@ -368,7 +377,7 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
       {
         servers_it serverConf = (*client)->getConfiguration();
         (*client)->processRequest(serverConf);
-        // std::cout << "PID NOW IS : " << (*client)->res.getProccessPID() << "\n";
+        // //std::cout << "PID NOW IS : " << (*client)->res.getProccessPID() << "\n";
       }
     }
     ++client;
@@ -417,6 +426,6 @@ void HttpServer::removeClient(client_it &client)
   HttpClient *temp = *client;
   client = _clients.erase(client);
   delete temp;
-  std::cout << ">>>> nbr of clients after delete: " << _clients.size() << "<<<<"
-            << std::endl;
+  // //std::cout << ">>>> nbr of clients after delete: " << _clients.size() << "<<<<"
+  //           << std::endl;
 }

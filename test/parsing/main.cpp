@@ -16,7 +16,7 @@ void parser_test(char *path)
 	} catch(std::exception &e)
 	{
 		// WHATEVER!!
-		std::cout << "err: "<< e.what() << "\n";
+		//std::cout << "err: "<< e.what() << "\n";
 	}
 }
 

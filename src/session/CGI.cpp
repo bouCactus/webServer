@@ -10,7 +10,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-
+void createErrorPageResponse(const servers_it &serverConf, const int statCode,
+                             HttpClient &client);
 Location getLocationOfFastCGIextension(Path &requestFile,
                                        const servers_it &serverConf)
 {
@@ -270,7 +271,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       {
         client.clean();
         res.setProccessPID(-1);
-        std::cout << "client mach fhaloooo!\n" << buff << "\n";
+        //std::cout << "client mach fhaloooo!\n" << buff << "\n";
       }
       else
       {
@@ -290,7 +291,8 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
   }
   catch (std::exception &e)
   {
-    res.setStatus(500);
+    createErrorPageResponse(serverConf, 500, client);
+    //res.setStatus(500);
     if (res.getProccessPID() != -1)
       client.clean();
     res.setProccessPID(-1);

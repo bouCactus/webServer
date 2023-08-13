@@ -49,7 +49,7 @@ bool removeDirectory(std::string directoryPath) {
         // Use std::filesystem::remove_all to recursively remove the directory
         // and its contents
         std::filesystem::remove_all(directoryPath);
-        // std::cout << "Directory removed: " << directoryPath << std::endl;
+        // //std::cout << "Directory removed: " << directoryPath << std::endl;
         return true;
     } catch (const std::exception &ex) {
         std::cerr << "Failed to remove directory: " << directoryPath

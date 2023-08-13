@@ -46,4 +46,10 @@ class ServersNotConnected : public std::exception {
 	}
 };
 
+class InternalServerError : public std::exception {
+	const char* what() const throw(){
+		return ("500");
+	}
+};
+
 #endif	//__HTTPTYPES__HPP

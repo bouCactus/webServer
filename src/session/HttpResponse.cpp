@@ -6,10 +6,10 @@
 #include <unistd.h>
 
 HttpResponse::~HttpResponse(void){
-//   std::cout << "response: destructor not implemented yet" << std::endl;
+//   //std::cout << "response: destructor not implemented yet" << std::endl;
   //close(_CGIFile.first);
   //unlink(_CGIFile.second.c_str());
-  std::cout << "res end here-----*\n";
+  // //std::cout << "res end here-----*\n";
 }
 
 void HttpResponse::clean() {
@@ -21,7 +21,7 @@ void HttpResponse::clean() {
 }
 
 HttpResponse::HttpResponse(const HttpResponse &other){
-    // std::cout << "Response: copy consturctor not implemented yet" << std::endl;
+    // //std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;
 }
 HttpResponse &HttpResponse::operator = (const HttpResponse &other){
@@ -83,13 +83,13 @@ void HttpResponse::setVersion(const std::string version){
 
 
 void HttpResponse::setDate(const std::string date){
-  std::cout << "not implemented yet" << std::endl;
+  //std::cout << "not implemented yet" << std::endl;
   this->_date = date;
 }				// i don't know yet
 
 
 // void HttpResponse::end(){
-  // std::cout << "not implemented yet"<<std::endl;
+  // //std::cout << "not implemented yet"<<std::endl;
 
 // }
 

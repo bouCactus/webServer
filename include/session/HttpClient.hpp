@@ -56,6 +56,8 @@ public:
 
 private:
   servers_it _conf;
+  std::string _port;
+  std::string _host;
   int _socket;
   bool _isRespondComplete;
   std::string _bufferRequest;

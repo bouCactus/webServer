@@ -54,7 +54,7 @@ int main() {
 	// Find the maximum file descriptor value
 	int maxFileDescriptor = serverSocket;
 
-	std::cout << "Server listening on port 8080" << std::endl;
+	//std::cout << "Server listening on port 8080" << std::endl;
 
 	// Create sets of file descriptors for select().
 	fd_set readfds, writefds;
@@ -95,7 +95,7 @@ int main() {
 			// Add the new client socket to the read file descriptor set.
 			FD_SET(clientSocket, &readfds);
 			
-			std::cout << "New connection established. Client socket: " << clientSocket << std::endl;
+			//std::cout << "New connection established. Client socket: " << clientSocket << std::endl;
 		}
 
 		// Check for activity on client sockets.
@@ -110,14 +110,14 @@ int main() {
 					FD_CLR(clientSocket, &readfds);
 					FD_CLR(clientSocket, &writefds);
 				} else if (bytesRead == 0) {
-					std::cout << "Client disconnected. Client socket: " << clientSocket << std::endl;
+					//std::cout << "Client disconnected. Client socket: " << clientSocket << std::endl;
 					close(clientSocket);
 					FD_CLR(clientSocket, &readfds);
 					FD_CLR(clientSocket, &writefds);
 				} else {
 					// Process the received data.
 					buffer[bytesRead] = '\0';
-					std::cout << "Data received from client socket " << clientSocket << ": \n" << buffer << std::endl;
+					//std::cout << "Data received from client socket " << clientSocket << ": \n" << buffer << std::endl;
 					
 					// Add the client socket to the write file descriptor set for response.
 					FD_SET(clientSocket, &writefds);
@@ -137,7 +137,7 @@ int main() {
 					FD_CLR(clientSocket, &readfds);
 					FD_CLR(clientSocket, &writefds);
 				} else {
-					std::cout << "Response sent to client socket " << clientSocket << std::endl;
+					//std::cout << "Response sent to client socket " << clientSocket << std::endl;
 					// Remove the client socket from the write file descriptor set.
 					FD_CLR(clientSocket, &writefds);
 				}

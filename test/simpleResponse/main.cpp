@@ -38,7 +38,7 @@ int serverSetup(int port){
 
 int accept_new_connection(int server, struct sockaddr_in  *addr){
   int new_socket;
-  std::cout << "new connection ->>>" << std::endl;
+  //std::cout << "new connection ->>>" << std::endl;
   if ((new_socket = accept(server, (struct sockaddr*) addr,(socklen_t*) addr)) < 0 ){
     perror("Error: accept()");
     exit(4);
@@ -48,7 +48,7 @@ int accept_new_connection(int server, struct sockaddr_in  *addr){
 
 void handle_connection(int socket, servers_it& serverConf){
   HttpClient client(socket);
-  std::cout << "---------reading start for here----------" << std::endl;
+  //std::cout << "---------reading start for here----------" << std::endl;
   int readByte;
   readByte = -1;
   while(true){
@@ -60,16 +60,16 @@ void handle_connection(int socket, servers_it& serverConf){
   buffer[1023] = '\0';
   client.req.parser(buffer);
   client.req.printRaw();
-  std::cout << "----------end__________" << std::endl;
+  //std::cout << "----------end__________" << std::endl;
   if (client.req.isRequestEnd()){
-    std::cout << "-----------" << std::endl;
+    //std::cout << "-----------" << std::endl;
     break;
   }
   }
-  std::cout << "-----end of the request---" << std::endl;
+  //std::cout << "-----end of the request---" << std::endl;
   client.processRequest(serverConf);
   
-  std::cout << "-------------------end of response------------" << std::endl;
+  //std::cout << "-------------------end of response------------" << std::endl;
   close(socket);
 
 }
@@ -124,9 +124,9 @@ int main(){
   close(server);
 
   }catch(std::exception &e){
-    std::cout << "err: "<< e.what() << "\n";
+    //std::cout << "err: "<< e.what() << "\n";
   }
 
-  std::cout << "hello world" << std::endl;
+  //std::cout << "hello world" << std::endl;
   return (0);
 }
