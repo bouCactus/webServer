@@ -20,14 +20,12 @@ void http::filesystem::Path::setQuery(std::string query) {
   if (query.empty())
     return;
   _queryString = query;
-  //std::cout << "set query to : " << query << "\n";
 };
 
 http::filesystem::Path::Path(string &path) : _path(path) { setPath(path); }
 
 http::filesystem::Path::Path(const Path &other) {
   *this = other;
-  // No need to call the assignment operator, directly initialize _path
 }
 
 Path &http::filesystem::Path::operator=(const Path &other) {
@@ -153,7 +151,6 @@ bool http::filesystem::isDirectory(const Path &path) {
     if (S_ISDIR(s.st_mode))
       return (true);
   } else {
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
   }
   return (false);
 }
@@ -163,15 +160,12 @@ bool http::filesystem::isRegular_file(const Path &path) {
   if (lstat(path.c_str(), &s) == 0) {
     if (S_ISREG(s.st_mode))
       return (true);
-  } else {
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
   }
   return (false);
 }
 
 bool http::filesystem::isExests(const Path &path) {
   struct stat s;
-  // //std::cout << " the file looking for  is " << path.c_str() << "\n";
   return (stat(path.c_str(), &s) == 0);
 }
 
@@ -221,10 +215,7 @@ file_type http::filesystem::type(const Path &path) {
       type = UNKNOWN;
       return (type);
     }
-  } else {
-    // error
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
-  }
+  } 
   type = NOT_FOUND;
   return (type);
 }
@@ -244,12 +235,11 @@ std::string http::filesystem::Path::getQueryString() const {
 
 size_t http::filesystem::fileSize(const Path &path) {
   struct stat s;
+  
   if (lstat(path.c_str(), &s) != 0) {
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
     return (0);
   }
   if (!S_ISREG(s.st_mode)) {
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
     return (0);
   }
   return (s.st_size);
@@ -257,9 +247,7 @@ size_t http::filesystem::fileSize(const Path &path) {
 
 std::time_t http::filesystem::getFileMTime(const Path &path) {
   struct stat s;
-
   if (lstat(path.c_str(), &s) != 0) {
-    //std::cout << "error has been thrown or should be throwning" << std::endl;
     exit(20);
   }
   return (s.st_mtime);

@@ -82,7 +82,7 @@ typedef std::map<std::string, std::string> mapErrors_t;
 typedef mapErrors_t::iterator mapErrors_it;
 
 #define DEF_HOST "127.0.0.1"
-#define DEF_PORT "80"
+#define DEF_PORT "8080"
 #define DEF_ERR_PAGE "/home/error.html"
 #define DEF_MAX "10"
 #define DEF_ALLOW 0
@@ -96,7 +96,7 @@ typedef mapErrors_t::iterator mapErrors_it;
 #endif
 
 #if DEBUG
-#define LOG_THROW() //std::cout << "[ throw ]: in " << __FILE__ << " (Line: " << __LINE__ << ").\n";
+#define LOG_THROW() std::cout << "[ throw ]: in " << __FILE__ << " (Line: " << __LINE__ << ").\n";
 #else
 #define LOG_THROW()
 #endif

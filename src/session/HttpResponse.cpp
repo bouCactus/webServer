@@ -6,10 +6,7 @@
 #include <unistd.h>
 
 HttpResponse::~HttpResponse(void){
-//   //std::cout << "response: destructor not implemented yet" << std::endl;
-  //close(_CGIFile.first);
-  //unlink(_CGIFile.second.c_str());
-  // //std::cout << "res end here-----*\n";
+
 }
 
 void HttpResponse::clean() {
@@ -29,8 +26,6 @@ void HttpResponse::clean(std::vector<int> &clientSockets) {
     if (it == clientSockets.end()) {
       close(fd);
     }
-    // std::cout << "{{{{{{{{{{{{{{" << *clientSocket <<" }}}}}}}}}}}}}}}}}}}}}}}\n";
-    std::cout << "------{{ "<<fd<<" is closed }}------\n";
   }
 
   if (!getCGIFile().second.empty())
@@ -38,7 +33,6 @@ void HttpResponse::clean(std::vector<int> &clientSockets) {
 }
 
 HttpResponse::HttpResponse(const HttpResponse &other){
-    // //std::cout << "Response: copy consturctor not implemented yet" << std::endl;
     *this = other;
 }
 HttpResponse &HttpResponse::operator = (const HttpResponse &other){
@@ -100,15 +94,11 @@ void HttpResponse::setVersion(const std::string version){
 
 
 void HttpResponse::setDate(const std::string date){
-  //std::cout << "not implemented yet" << std::endl;
   this->_date = date;
-}				// i don't know yet
+}				
 
 
-// void HttpResponse::end(){
-  // //std::cout << "not implemented yet"<<std::endl;
 
-// }
 
 void HttpResponse::setBody(const std::string body){
   _body = body;

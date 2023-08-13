@@ -8,18 +8,14 @@ int	main(int ac, char** av) {
 	try {
 		/*** Parsing the configuration file ***/ 
 		Config conf(av[1]);
-		//exit(1);
 		/*** Multiplexing ***/
 		servers_t	servers = conf.getServers();
 		HttpServer	httpServer(servers);
 		httpServer.start(httpServer);
-
-		// httpServer.closeServerSockets();
 	}
 	catch(std::exception &e)
 	{
-		// WHATEVER!!
-		//std::cout << e.what() << std::endl;
+		std::cout << e.what() << std::endl;
 	}
 	return  (0);
 }

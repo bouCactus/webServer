@@ -92,7 +92,7 @@ servers_it it = servers.begin();
 try {
     value_t root = it->at(<path>).getRoot();
 }catch (std::exception &) {
-    //std::cout << "No loaction match!" << std::endl;
+    std::cout << "No loaction match!" << std::endl;
 }
 ```
 #### this will return the root of the loaction that has <path> as a key in the first server block, if no location is matched, the (at) method will throw an exception, it is up to you to handle it.

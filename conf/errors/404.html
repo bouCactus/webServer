@@ -1,5 +1,48 @@
-<html>
-    <body>
-      hello world 404    
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+        }
+        .error-code {
+            font-size: 4rem;
+            color: #e74c3c;
+        }
+        .error-message {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-code">404</div>
+        <div class="error-message">Oops! The page you're looking for could not be found.</div>
+        <p>It seems like you're lost. Let's get you back on track:</p>
+        <a class="back-link" href="/">Go to Home</a>
+    </div>
+</body>
 </html>

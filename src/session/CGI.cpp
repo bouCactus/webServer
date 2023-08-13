@@ -9,6 +9,7 @@
 #include <exception>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 void createErrorPageResponse(const servers_it &serverConf, const int statCode,
                              HttpClient &client);
@@ -110,7 +111,7 @@ char **setEnv(const Path &reqResource, HttpClient &client)
   env[i++] = formatHeader("QUERY_STRING", reqResource.getQueryString(), false);
   env[i++] = formatHeader("REQUEST_METHOD", req.getMethod(), false);
   env[i++] = formatHeader("SERVER_PROTOCOL", req.getVersion(), false);
-  env[i++] = formatHeader("CONTENT_LENGTH", std::to_string(req.getContentLength()), false);
+  env[i++] = formatHeader("CONTENT_LENGTH", TO_STRING(req.getContentLength()), false);
   string contentType = req.getHeaders()["Content-Type"];
   if (!contentType.empty())
     env[i++] = formatHeader("CONTENT_TYPE", contentType, false); 
@@ -126,10 +127,10 @@ std::string generateUniqueName(int socket)
   std::stringstream s(fileName);
   time_t t = time(0);
   if (t == -1)
-    throw std::exception();
+    throw 500;
   s << t;
   s >> fileName;
-  return ("/tmp/CGI_temp_" + fileName + "_" + std::to_string(socket));
+  return ("/tmp/CGI_temp_" + fileName + "_" + TO_STRING(socket));
 }
 
 int getStatusCode(std::string &value)
@@ -138,16 +139,16 @@ int getStatusCode(std::string &value)
   std::string::size_type p = value.find_first_not_of(' ');
   if (p == std::string::npos)
   {
-    throw std::exception();
+    throw 500;
   }
   value = value.substr(p);
   p = value.find_first_of(' ');
   if (p == std::string::npos)
-    throw std::exception();
+    throw 500;
   std::string code = value.substr(0, p);
   int status = std::strtod(code.c_str(), &rest);
   if (status == 0)
-    throw std::exception();
+    throw 500;
   return status;
 }
 
@@ -167,7 +168,7 @@ void setHeaders(HttpClient &client, std::string &filename)
   {
     std::string::size_type p = line.find_first_of(":");
     if (p == string::npos)
-      throw std::exception();
+      throw 500;
     std::string key = line.substr(0, p);
     std::string value = line.substr(p + 1);
     p = value.find_last_of('\r');
@@ -175,10 +176,10 @@ void setHeaders(HttpClient &client, std::string &filename)
       value = value.substr(0, p);
     p = value.find_first_not_of(' ');
     if (p == string::npos)
-      throw std::exception();
+      throw 500;
     value = value.substr(p);
     if (key.empty() || value.empty())
-      throw std::exception();
+      throw 500;
     if (key == "Status")
     {
       res.setStatus(getStatusCode(value));
@@ -188,16 +189,17 @@ void setHeaders(HttpClient &client, std::string &filename)
       res.appendHeader(key, value); 
   }
   if (line.empty() || !isStatusSet)
-    throw std::exception();
+    throw 500;
 
   getline(out, line, '\0');
   tmp << line;
-  res.appendHeader("Content-Length", std::to_string(line.size()));
+  res.appendHeader("Content-Length", TO_STRING(line.size()));
   out.close();
   tmp.close();
   std::remove(filename.c_str());
   std::rename(tmp_name.c_str(), filename.c_str());
 }
+
 
 void executeCGIScriptAndGetResponse(const Path &reqResource,
                                     const servers_it &serverConf,
@@ -216,7 +218,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
         (reqMethod == "POST" && !CGILocation.isCGIAllowed(POST)) ||
         (reqMethod != "GET" && reqMethod != "POST"))
     {
-      throw std::exception();
+      throw 405 ;
     }
     if (res.getProccessPID() == -1)
     {
@@ -224,7 +226,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       int fd = open(fileName.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0666);
 
       if (fd == -1)
-        throw std::exception();
+        throw 500;
       int inFile = 0;
       if (req.getFormDataPart().size() != 0)
       {
@@ -233,7 +235,7 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       client.setTimeOut(time(0));
       int pid = fork();
       if (pid == -1)
-        throw std::exception();
+        throw 500;
       if (pid == 0)
       {
         char **env = setEnv(reqResource, client);
@@ -261,26 +263,20 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
     int p = waitpid(res.getProccessPID(), &status, WNOHANG);
     if (p == 0)
     {
-      // if (!client.clientIsConnected())
-      // {
-      //   client.clean();
-      //   res.setProccessPID(-1);
-      // }
       char buff[10];
       if (read(client.getSocket(), &buff, 10) == 0)
       {
         client.clean();
         res.setProccessPID(-1);
-        //std::cout << "client mach fhaloooo!\n" << buff << "\n";
       }
       else
       {
         if (time(0) - client.getTimeOut() > CGILocation.getCgiTimeOut())
-          throw std::exception();
+          throw 500;
       }
     }
     else if (p == -1 || (WIFEXITED(status) && WEXITSTATUS(status) == 13))
-      throw std::exception();
+      throw 500;
     else
     {
       res.setProccessPID(-1);
@@ -289,10 +285,9 @@ void executeCGIScriptAndGetResponse(const Path &reqResource,
       res.setFilename(http::filesystem::Path(f));
     }
   }
-  catch (std::exception &e)
+  catch (int status)
   {
-    createErrorPageResponse(serverConf, 500, client);
-    //res.setStatus(500);
+    createErrorPageResponse(serverConf, status, client);
     if (res.getProccessPID() != -1)
       client.clean();
     res.setProccessPID(-1);

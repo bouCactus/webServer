@@ -32,15 +32,12 @@ void HttpMethodProcessor::processGetRequest(HttpClient &client,
   
   http::filesystem::Path requestedResource =
       req.getPathWRoot(req.getPath(), conf_S);
-  // //std::cout << "-----------" << requestedResource.c_str() << std::endl;
   if (!resourceExists(requestedResource)) {
-    // //std::cout << "generate error page for 404" << std::endl;
     createErrorPageResponse(conf_S, 404, client);
     return;
   }
 
   else if (http::filesystem::isDirectory(requestedResource)) {
-    // //std::cout << "-----inside directory--------" << std::endl;
     createDirectoryResponse(requestedResource, client, conf_S);
     return;
   }
@@ -50,7 +47,6 @@ void HttpMethodProcessor::processGetRequest(HttpClient &client,
     return;
   }
  
-  // //std::cout << "prepar to inter file response" << std::endl;
   createRegularFileResponse(requestedResource, conf_S, client);
 }
 
@@ -66,14 +62,12 @@ void HttpMethodProcessor::processDeleteRequest(HttpClient &client,
     createErrorPageResponse(conf_S, 404, client);
     return;
   } else if (http::filesystem::isDirectory(requestedResource)) {
-    // //std::cout << "-----inside directory--------" << std::endl;
     createDeleteDirectoryResponse(requestedResource, client, conf_S);
     return;
   } else if (hasCGI(requestedResource, req, conf_S)) {
     executeCGIScriptAndGetResponse(requestedResource, conf_S, client);
     return;
   }
-  //std::cout << "prepar to inter file response" << std::endl;
   createDeleteRegularFileResponse(requestedResource, client, conf_S);
   return;
 }
@@ -106,7 +100,6 @@ void HttpMethodProcessor::processPostRequest(HttpClient &client,
       return;
     }
     createErrorPageResponse(conf_S, 403, client);
-      //exit(120);
     return;
 
   }

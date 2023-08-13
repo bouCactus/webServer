@@ -15,8 +15,8 @@ Config::Config(std::string const &path) { _servers = Parser(path)(); };
  */
 void Config::DisplayValues(values_t val) {
   // for (values_it it = val.begin(); it != val.end(); it++)
-    //std::cout << *it << " ";
-  //std::cout << "\n";
+  // std::cout << *it << " ";
+  // std::cout << "\n";
   (void )val;
 };
 
@@ -25,15 +25,15 @@ void Config::DisplayValues(values_t val) {
  * @param	l		Location to be printed.
  */
 void Config::DisplayServerLocation(Location &l) {
-  //std::cout << "\t\tRedirections: ";
+  std::cout << "\t\tRedirections: ";
   DisplayValues(l.getRedirect());
-  //std::cout << "\t\tRoot: " << l.getRoot() << "\n";
-  //std::cout << "\t\tIndexs: ";
+  std::cout << "\t\tRoot: " << l.getRoot() << "\n";
+  std::cout << "\t\tIndexs: ";
   DisplayValues(l.getIndex());
-  //std::cout << "\t\tauto Index: " << l.isAutoIndex() << "\n";
-  //std::cout << "\t\tis POST allowed: " << l.isAllowed(POST) << "\n";
-  //std::cout << "\t\tis GET allowed: " << l.isAllowed(GET) << "\n";
-  //std::cout << "\t\tis DELETE allowed: " << l.isAllowed(DELETE) << "\n";
+  std::cout << "\t\tauto Index: " << l.isAutoIndex() << "\n";
+  std::cout << "\t\tis POST allowed: " << l.isAllowed(POST) << "\n";
+  std::cout << "\t\tis GET allowed: " << l.isAllowed(GET) << "\n";
+  std::cout << "\t\tis DELETE allowed: " << l.isAllowed(DELETE) << "\n";
 };
 
 /**
@@ -41,14 +41,14 @@ void Config::DisplayServerLocation(Location &l) {
  * @param	s		Server to be printed.
  */
 void Config::DisplayServerDirectives(Server &s) {
-  //std::cout << "\tPorst: ";
+  std::cout << "\tPorst: ";
   DisplayValues(s.getPorts());
-  //std::cout << "\tHost: " << s.getHost() << "\n";
-  //std::cout << "\tServer Names: ";
+  std::cout << "\tHost: " << s.getHost() << "\n";
+  std::cout << "\tServer Names: ";
   DisplayValues(s.getServerNames());
-  //std::cout << "\tError page: ";
+  std::cout << "\tError page: ";
   DisplayValues(s.getErrorPage());
-  //std::cout << "\tMax: " << s.getMax() << "\n";
+  std::cout << "\tMax: " << s.getMax() << "\n";
 };
 
 /**
@@ -57,12 +57,12 @@ void Config::DisplayServerDirectives(Server &s) {
 void Config::Display() {
   // int n = 0;
   // for (servers_it it = _servers.begin(); it != _servers.end(); it++) {
-  //   //std::cout << "SERVER [ " << ++n << " ]\n";
+  //   std::cout << "SERVER [ " << ++n << " ]\n";
   //   DisplayServerDirectives(*it);
   //   locations_t locs = it->getLocations();
   //   int j = 0;
   //   for (locations_it l = locs.begin(); l != locs.end(); l++) {
-  //     //std::cout << "\tLoaction [ " << ++j << " ]\n";
+  //     std::cout << "\tLoaction [ " << ++j << " ]\n";
   //     DisplayServerLocation(l->second);
   //   }
   // }
@@ -193,7 +193,8 @@ bool Location::isAllowed(Req req) {
     method = "POST";
   if (req == GET)
     method = "GET";
-
+  if (req == DELETE)
+    method = "DELETE";
   values_it v_it = find(it->second.begin(), it->second.end(), method);
   if (v_it == it->second.end())
     return false;

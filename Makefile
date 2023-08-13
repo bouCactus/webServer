@@ -56,8 +56,8 @@ $(NAME): $(OBJ)
 	@echo  
 	@[ -d $(MYDIR) ] || mkdir -p $(MYDIR)
 	@[ -d $(BIN) ] || mkdir -p $(BIN)
-	@mv $(OBJ) $(MYDIR)
-	@mv $(NAME) $(BIN)
+#	@mv $(OBJ) $(MYDIR)
+#	@mv $(NAME) $(BIN)
 
 clean:
 	@$(RM) $(OBJ) $(MYDIR)

@@ -11,17 +11,13 @@
 #include <unistd.h>
 #include "utilsFunction.hpp"
 #include <fstream>
-int sendHeader(HttpResponse &res,
-               int _socket /*_socket to not complicated things */) {
+int sendHeader(HttpResponse &res, int _socket ) {
   std::stringstream st;
   std::string content;
-  // //std::cout << "----------------->" << "\"" << res.getVersion() << "\"" <<
-  // std::endl;
   st << res.getVersion() << " " << res.getStatus() << " "
      << res.status.getStatusMessage(res.getStatus()) << "\r\n"
      << res.getHeaders() << "\r\n";
   content = st.str();
-  // //std::cout << "HEADER:: " << content << "\n";
   return send(_socket, content.c_str(), content.size(), 0);
 }
 
@@ -30,7 +26,6 @@ hfs::Path &HttpClient::getIndexPath() { return _indexPath; }
 
 HttpClient::HttpClient(const HttpClient &httpClient) {
 
-  //std::cout << "HttpClient:: >>> Copy Constructor called\n";
   this->_socket = httpClient.getSocket();
   _conf = httpClient._conf;
   _isRequestComplete = false;
@@ -38,7 +33,6 @@ HttpClient::HttpClient(const HttpClient &httpClient) {
 }
 
 HttpClient &HttpClient::operator=(const HttpClient &httpClient) {
-  //std::cout << "HttpClient::>>> Assignement operator called\n";
   if (this != &httpClient) {
     this->_socket = httpClient.getSocket();
     _conf = httpClient._conf;
@@ -63,7 +57,6 @@ void HttpClient::clean() {
 
 void HttpClient::clean(std::list<HttpClient*> &clients) {
   if (this->res.getProccessPID() != -1) {
-    std::cout << ">>>>>>>>>>> this is the KILER !!!!!!\n";
     kill(this->res.getProccessPID(), SIGKILL);
   }
   std::vector<int> clientSockets;
@@ -75,12 +68,9 @@ void HttpClient::clean(std::list<HttpClient*> &clients) {
 }
 
 HttpClient::~HttpClient() {
-  // clean();
-  // //std::cout << "CLIENT GET CLEANED!! BUT NEVER CALLED\n";
 }
 
-int HttpClient::sendFileResponse(HttpResponse &res,
-                                 int socket /*just to test*/) {
+int HttpClient::sendFileResponse(HttpResponse &res, int socket ) {
   // here where you open file and send it  by chunks
 
   std::ifstream file(res.getFilename().c_str(), std::istream::in);
@@ -95,20 +85,18 @@ int HttpClient::sendFileResponse(HttpResponse &res,
     serverLog(*this);
     bytesSent = sendHeader(res, socket);
     _isHeaderSent = true;
+    return bytesSent;
   }
   file.seekg(_writingPos);
   std::streamsize size = 1024;
   sizePos = file.read(buffer, size).gcount();
   buffer[sizePos] = '\0';
   if (sizePos <= 0) {
-    // close(_socket);
     _isHeaderSent = false;
     _writingPos = 0;
     _isRespondComplete = true;
   }
-  // if (sizePos)
   bytesSent = send(socket, buffer, sizePos, 0);
-  // //std::cout << "IT SEND\n";
   _writingPos += sizePos;
   return (bytesSent);
 }
@@ -139,21 +127,41 @@ void redirectToNewLocation(std::string newLcoation, HttpClient &client) {
   client.res.appendHeader("Location", newLcoation);
 }
 
+bool isLocationAllowMethod(HttpClient& client,
+                           const servers_it &serverConf, Req method) {
+  HttpRequest& req = client.req;
+  std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
+  
+  try {
+    if (serverConf->at(location).isAllowed(method))
+      return (true);
+  } catch (std::exception &) {
+  }
+  
+  return (false);
+}
 void HttpClient::processRequest(servers_it &conf_S) {
   HttpMethodProcessor method;
   if (!_isHeaderSent) {
     std::string locationToRedirect = shouldRedirect(*this, conf_S);
+
     if (!locationToRedirect.empty()) {
       redirectToNewLocation(locationToRedirect, *this);
       return;
     } else if (req.getMethod() == "GET") {
+      if (!isLocationAllowMethod(*this, conf_S, GET))
+        throw 405;
       method.processGetRequest(*this, conf_S);
     } else if (req.getMethod() == "POST") {
+       if (!isLocationAllowMethod(*this, conf_S, POST))
+        throw 405;
       method.processPostRequest(*this, conf_S);
     } else if (req.getMethod() == "DELETE") {
+       if (!isLocationAllowMethod(*this, conf_S, DELETE))
+        throw 405;
       method.processDeleteRequest(*this, conf_S);
     } else {
-      //std::cout << "Handle unsupported HTTP method" << std::endl;
+      throw 405;
     }
   }
 }
@@ -164,22 +172,24 @@ time_t HttpClient::getTimeOut() const { return _timeOut; };
 
 int HttpClient::sendResponse() {
   serverLog(*this);
-  sendHeader(res, _socket);
-  _isHeaderSent = true;
-  // //std::cout << "body = " << res.getBody() << " size: " << res.getBodySize()
-  //           << "\n";
-  int bytesSent = -1;
-  // if (!res.getBody().empty())
-  // bytesSent = send(_socket, "", 0, 0);
-  bytesSent = send(_socket, res.getBody().c_str(), res.getBodySize(), 0);
-  // //std::cout << "IT IS ME!!!!!\n";
-  /*
-    So weird that send exit the process if the body is empty!!!!
-  */
+ 
 
+    std::stringstream st;
+  std::string content;
+  int bytesSent = -1;
+ 
+  st << res.getVersion() << " " << res.getStatus() << " "
+     << res.status.getStatusMessage(res.getStatus()) << "\r\n"
+     << res.getHeaders() << "\r\n";
+  content = st.str();
+
+  content.append(res.getBody());
+  bytesSent = send(_socket, content.c_str(), content.size(), 0);
+
+  _isHeaderSent = true;
   _isRespondComplete = true;
   _isHeaderSent = false;
-  // //std::cout << "response sent..." << std::endl;
+
   return (bytesSent);
 }
 

@@ -60,6 +60,7 @@ public:
         statusCodes[HTTP_REQUESTENTITYTOOLARGE] = "Http Request Entity Too Large";
         statusCodes[HTTP_NO_CONTENT] = "No Content";
         statusCodes[HTTP_INTERNAL_SERVER_ERROR] = "Internal Server Error";
+        statusCodes[HTTP_METHOD_NOT_ALLOWED] = "Method Not Allowed";
         // Add more status codes as needed
     }
 

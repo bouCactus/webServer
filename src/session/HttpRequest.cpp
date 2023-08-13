@@ -5,8 +5,9 @@
 #include "HttpTypes.hpp"
 #include "HttpServer.hpp"
 #include <fstream>
+#include "HttpResponse.hpp"
+
 HttpRequest::HttpRequest(void) {
-  // //std::cout << "Resquest: constructor not implemented yet" << std::endl;
   _chunkSize = -1;
   _contentLength = 0;
   _headersProcessed = false;
@@ -14,7 +15,6 @@ HttpRequest::HttpRequest(void) {
 };
 
 HttpRequest::~HttpRequest(void) {
-  // //std::cout << "Resquest: destructor not implemented yet" << std::endl;
   for (size_t i = 0; i < _parsed_parts.size(); ++i) {
     _parsed_parts[i].fileStream->close();
     delete _parsed_parts[i].fileStream;
@@ -30,12 +30,9 @@ std::vector<FormDataPart> HttpRequest::getFormDataPart() const {
 }
 
 HttpRequest::HttpRequest(const HttpRequest &other) {
-  //   //std::cout << "Resquest: copy consturctor not implemented yet" <<
-  //   std::endl;
   (void)other;
 }
 HttpRequest &HttpRequest::operator=(const HttpRequest &other) {
-  // //std::cout << "Request: copy assignment not implemented yet" << std::endl;
   (void)other;
   return (*this);
 }
@@ -116,17 +113,16 @@ std::ofstream *createFile(const std::string &name) {
 std::string generateUniqueName() {
 
   time_t t = time(0);
-  return (std::to_string(t));
+  std::string s = TO_STRING(t);
+  return (s);
 };
 
 std::string HttpRequest::getUploadPath(servers_it &serverConf){
     std::string pathLocation = this->findlocationOfUrl(this->_path,serverConf);
-    //std::cout << "pathLocation _-->" << pathLocation << std::endl;
     Location location = serverConf->at(pathLocation);
     value_t uploadPath = location.getUploadPath();
-    //std::cout << "uploadPath: " << uploadPath << std::endl;
     if (!hfs::isExests(uploadPath)){
-      throw 500; //InternalServerError()
+      throw 500;
     }
     return (uploadPath);
 }
@@ -149,7 +145,6 @@ std::string HttpRequest::getFileTypeFromContentType(std::string &contentType){
 }
 
 bool HttpRequest::prepareFileForPostRequest(servers_it &serverConf) {
-  std::cout << "prepareFileforpostrewuest----------" << std::endl;
   FormDataPart part;
   std::string &contentType = headers["Content-Type"];
   // Get the location for file upload
@@ -186,8 +181,6 @@ bool HttpRequest::prepareFileForPostRequest(FormDataPart &part, servers_it &serv
   }else if(!part.name.empty()){
      part.filename = uploadPath + part.name ;
   }
-  // TODO
-  // check if file or just text
   part.fileStream = createFile(part.filename);
   if (!part.fileStream){
     setResourceCreatedSuccessfully(false);
@@ -235,7 +228,6 @@ bool HttpRequest::parseChunkedEncoding(servers_it &serverConf) {
     }
 
     if (_chunkSize == 0) {
-      //std::cout << "end of the chunks" << std::endl;
       return true;
     }
 
@@ -339,7 +331,6 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
 
   if (transferEncoding == "chunked") {
     // Process chunked data
-    // std::cout << "|+|==============chunked==================|+|" << std::endl;
     return parseChunkedEncoding(serverConf);
   } else if (!contentLength.empty()) {
     _contentLength += _requestBuffer.size();
@@ -356,11 +347,9 @@ bool HttpRequest::processRequestBodyContent(servers_it &serverConf) {
       } else {
         std::string boundary =
             contentType.substr(boundaryPos + boundaryPrefix.size());
-        // std::cout << "|+|==============boundary==================|+|" << std::endl;
         return parseBoundaryChunk(boundary, serverConf);
       }
     }
-  // std::cout << "|+|==============content length==================|+|" << std::endl;
     // Process content with known length
     if (!_requestBuffer.empty() && storeChunkToFile(_requestBuffer, serverConf)) {
       _requestBuffer.clear();
@@ -389,7 +378,6 @@ void HttpRequest::checkRequestErrors(servers_it &serverConf) {
   const std::string &transferEncoding = headers["Transfer-Encoding"];
   const std::string &maxBodySize = serverConf->getMax();
 
-      std::cout << std::atoi(contentLength.c_str()) << "  |  " << std::atoi(contentLength.c_str()) << std::endl;
   if (!transferEncoding.empty() && transferEncoding != "chunked") {
     throw NOT_IMPLEMENTED;
   } else if (transferEncoding.empty() && contentLength.empty() &&
@@ -401,14 +389,13 @@ void HttpRequest::checkRequestErrors(servers_it &serverConf) {
     throw REQUESTURITOOLONG;
   } else if (std::atoi(contentLength.c_str()) >
             std::atoi(maxBodySize.c_str()) * 1e6) {
-    throw REQUESTURITOOLONG;
+    throw REQUESTENTITYTOOLARGE;
   }
 }
 
 
 int HttpRequest::parseRequest(char *rawData, size_t bytesread,
                               servers_it &serverConf) {
-  // _requestBuffer += rawData;
   _requestBuffer.append(rawData, bytesread);
   
   if (!_headersProcessed) {
@@ -470,8 +457,7 @@ std::string HttpRequest::findlocationOfUrl(const hfs::Path &path,
     conf->at(rootDir);
     return (rootDir);
   } catch (...) {
-    //std::cout << "the exception of find location of url when return emtpy"
-              // << std::endl;
+
     return ("");
   }
 }
@@ -489,7 +475,6 @@ hfs::Path HttpRequest::addRoot(const hfs::Path &path,
   try {
     root = conf->at(location).getRoot();
   } catch (std::exception &) {
-    //std::cout << "page 500" << std::endl;
   }
   hfs::Path newPath(path);
   newPath.setPath(pathStr.replace(0, pos, root));
@@ -499,8 +484,6 @@ hfs::Path HttpRequest::addRoot(const hfs::Path &path,
 
 hfs::Path HttpRequest::getPathWRoot(const hfs::Path &path,
                                     const servers_it &conf) const {
-  // //std::cout << path.c_str() << std::endl;
   value_t root = findlocationOfUrl(path, conf);
-  // //std::cout << "root: " << root << std::endl;
   return addRoot(path, root, conf);
 }

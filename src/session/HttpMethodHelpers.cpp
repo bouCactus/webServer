@@ -10,7 +10,6 @@ std::string getErrorPagePath(std::string status, const servers_it &serverConf){
   
     mapErrors_t errors = serverConf->getmapErrors();
     mapErrors_it uploadPath = errors.find(status);
-    //std::cout << uploadPath->second << std::endl;
     if (uploadPath != errors.end()){
 
     return (uploadPath->second);
@@ -30,7 +29,6 @@ void createErrorPageResponse(const servers_it &serverConf, const int statCode,
   res.defaultErrorResponse(statCode);
   res.appendHeader("Content-Type", "text/html");
   if (!errorPage.empty()){
-    // //std::cout << "error file send.............."<< std::endl;
     res.setFilename(errorPage); 
     res.appendHeader("Content-length" , TO_STRING(hfs::fileSize(errorPage)));     
   }else{
@@ -46,7 +44,7 @@ void createErrorPageResponse(const servers_it &serverConf, const int statCode,
 
 
 
-std::string getType(Path &reqResource) { // just temp
+std::string getType(Path &reqResource) { 
   std::map<std::string, std::string> types;
   std::map<std::string, std::string>::iterator it;
   types["html"] = "text/html";
@@ -77,21 +75,16 @@ void createRegularFileResponse(Path &reqResource, const servers_it &serverConf,
   }
   res.setStatus(200);
 
-  (void)serverConf; //  if (serverConf.getServerName())
+  (void)serverConf; 
   res.appendHeader("server", "webServer");
   res.appendHeader("Date", getTimeGMT());
-
   res.appendHeader("Content-Type", getType(reqResource));
-  //    if (serverConf.getTimeOut() <= 0)
   res.appendHeader("Connection", "keep-alive");
-  //    else
-  // res.appendHeader("Connection", "done");
   res.appendHeader("Content-length", TO_STRING(hfs::fileSize(reqResource)));
   res.appendHeader("Last-Modified",
                    convertTimeToGMT(hfs::getFileMTime(reqResource)));
   res.setFilename(reqResource);
   res.setBody("");
-  // //std::cout << "request leaving createRegularFileResponse" << std::endl;
 }
 
 hfs::Path getindex(const hfs::Path &path, const HttpRequest &req,
@@ -122,8 +115,6 @@ bool isAutoIndexEnabled(const HttpRequest &req, const servers_it &serverConf) {
     Location location = serverConf->at(requestedLocationName);
     return (location.isAutoIndex());
   } catch (...) {
-    //std::cout << "the exception of the autoIndexEnabled when at throw "
-              // << std::endl;
     return (false);
   }
 }
@@ -153,29 +144,25 @@ void getAutoIndex(const servers_it &serverConf, HttpClient &client) {
   HttpRequest &req = client.req;
 
   res.setStatus(200);
-  res.setVersion("HTTP/1.1"); // setting the version
+  res.setVersion("HTTP/1.1"); 
   std::stringstream responseBodyStream;
   hfs::Path requestedPath = req.getPath();
 
   res.appendHeader("server", "webServer");
   res.appendHeader("Date", getTimeGMT());
   res.appendHeader("Content-Type", "text/html");
-  //    if (serverConf.getTimeOut() <= 0)
   res.appendHeader("Connection", "keep-alive");
-  //    else
-  // res.appendHeader("Connection", "done");
-  //++++++++++++++++++++
+
   responseBodyStream << "<!DOCTYPE html><head><title>"
                      << "Index of " << requestedPath.c_str()
                      << "</title></head><body><h1>" << requestedPath.c_str()
                      << "</h1><hr><pre>" << listIndex(req, serverConf)
                      << "</pre></body></html>";
   res.setBody(responseBodyStream.str());
-  // //std::cout << res.getBody() << std::endl;
   res.appendHeader("Content-length", TO_STRING(res.getBodySize()));
 }
 
-// this function not full functional check carefully
+
 void createDirectoryResponse(hfs::Path &reqResource, HttpClient &client,
                              servers_it &serverConf) {
   HttpRequest &req = client.req;
@@ -193,12 +180,10 @@ void createDirectoryResponse(hfs::Path &reqResource, HttpClient &client,
     indexPath = getindex(reqResource, req, serverConf);
     client.setIndexPath(indexPath);
   }
-  // //std::cout << "go to the index: [" << indexPath.c_str() << "]" << std::endl;
+
   if (client.getIndexPath().empty()) {
     if (isAutoIndexEnabled(req, serverConf)) {
-      // return (getAutoIndex(req, serverConf));
-      //   //std::cout << "<---------------autoIndexEnalbed---------------->>>"
-      //             << std::endl;
+
       getAutoIndex(serverConf, client);
       return;
 
@@ -220,7 +205,6 @@ void delete_directory_recursive(const char *path, const servers_it &serverConf,
                                 HttpClient &client) {
   DIR *dir = opendir(path);
   if (dir == NULL) {
-    // return defaultResponse(500); // Internal Server Error
     createErrorPageResponse(serverConf, 500, client);
     return;
   }
@@ -241,12 +225,10 @@ void delete_directory_recursive(const char *path, const servers_it &serverConf,
         delete_directory_recursive(filePath.c_str(), serverConf, client);
         if (client.res.getStatus() != 204) {
           closedir(dir);
-          // return client.res;
         }
       } else {
         if (std::remove(filePath.c_str()) != 0) {
           closedir(dir);
-          // return defaultResponse(500); // Internal Server Error
           createErrorPageResponse(serverConf, 500, client);
           return;
         }
@@ -257,22 +239,18 @@ void delete_directory_recursive(const char *path, const servers_it &serverConf,
   closedir(dir);
 
   if (std::remove(path) != 0) {
-    // return defaultResponse(500); // Internal Server Error
     createErrorPageResponse(serverConf, 500, client);
     return;
   }
 
-  // return defaultResponse(204); // No Content
   createErrorPageResponse(serverConf, 204, client);
   return;
 }
 
 void delete_directory(const Path &path, const servers_it &serverConf,
                       HttpClient &client) {
-  // Ensure the path is not empty
   if (path.empty()) {
-    // return defaultResponse(500); // Internal Server Error
-    //std::cout << "the path is empty: " << path.c_str() << std::endl;
+
     createErrorPageResponse(serverConf, 500, client);
     return;
   }
@@ -283,8 +261,7 @@ void delete_directory(const Path &path, const servers_it &serverConf,
 void createDeleteDirectoryContent(hfs::Path &requestedResource,
                                   const servers_it &serverConf,
                                   HttpClient &client) {
-  //std::cout << "the requestedResource:" << requestedResource.c_str()
-            // << std::endl;
+
   delete_directory(requestedResource, serverConf, client);
 }
 
@@ -294,15 +271,14 @@ void createDeleteDirectoryResponse(hfs::Path &reqResource, HttpClient &client,
   hfs::Path indexPath;
 
   if (!reqResource.endswith('/')) {
-    // res.defaultErrorResponse(409);
-    // return (res);
+
     createErrorPageResponse(serverConf, 409, client);
     return;
   }
   if (hasCGI(indexPath, req, serverConf)) {
     hfs::Path index = getindex(reqResource, req, serverConf);
     if (index.empty()) {
-      // return (res.defaultErrorResponse(403));
+
       createErrorPageResponse(serverConf, 403, client);
       return;
     }
@@ -322,11 +298,10 @@ void createDeleteRegularFileResponse(hfs::Path &path, HttpClient &client,
     return;
   }
   if (remove(path.c_str()) != 0) {
-    // return defaultResponse(500); // Internal Server Error
+
     createErrorPageResponse(serverConf, 500, client);
     return;
   }
-  // return defaultResponse(204); // No Content
   createErrorPageResponse(serverConf, 204, client);
 }
 
@@ -358,12 +333,10 @@ void createDirectoryPostResponse(hfs::Path &reqResource, HttpClient &client,
 bool isLocationAllowUpload(const HttpRequest &req,
                            const servers_it &serverConf) {
   std::string location = req.findlocationOfUrl(req.getPath(), serverConf);
-  // //std::cout << "lcoation of post :" << location << std::endl;
   try {
     if (serverConf->at(location).isAllowed(POST))
       return (true);
   } catch (std::exception &) {
-    //std::cout << "the excption of the allow upload " << std::endl;
   }
   return (false);
 }

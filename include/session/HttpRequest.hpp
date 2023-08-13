@@ -40,13 +40,6 @@ public:
 
   int parseRequest(char *rawData, size_t bytesread, servers_it &serverConf);
 
-  // void printRaw(){
-  //   //std::cout <<  this->_method << " - " << this->_path.c_str() << " - " <<
-  //   this->_version<< std::endl; for (std::map<std::string,
-  //   std::string>::iterator it = headers.begin(); it != headers.end() ; it++){
-  //     //std::cout << it->first << ":" << it->second << std::endl;
-  //   }
-  // }
   void closeFile();
   std::string getMethod();
   http::filesystem::Path getPath() const;

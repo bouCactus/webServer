@@ -58,8 +58,7 @@ HttpServer::HttpServer(servers_t &servers)
     /*** Find out the number of server sockets to be created. ***/
     maxServerSockets += server->getPorts().size();
   }
-  // std::cout << "servers not connected: " << serversNotConnected 
-  //           << "     max server sockets: " << maxServerSockets << std::endl;
+
   if (serversNotConnected == maxServerSockets) {
     throw ServersNotConnected();
   }
@@ -73,7 +72,6 @@ int HttpServer::createNewSocket()
   int flag = fcntl(serverSocket, F_GETFL, 0);
   fcntl(serverSocket, F_SETFL, flag | O_NONBLOCK);
   if (serverSocket == -1) {
-    // std::cerr << "Error creating socket" << std::endl;
     return (-1);
   }
 
@@ -187,7 +185,6 @@ void HttpServer::start(HttpServer	&httpServer) {
     else {
       /*** Restart the server in case of select() failure. ***/
       FD_ZERO(&readfds);
-      // FD_ZERO(&writefds);
       serverSock_it serverSocket = httpServer.getServerSockets().begin();
       serverSock_it it_end = httpServer.getServerSockets().end();
       for (; serverSocket != it_end; ++serverSocket) {
@@ -242,8 +239,6 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
        * max-File-Descriptor. ***/
       setNewFD(newSocket);
 
-      //   //std::cout << "New connection established. Client socket: "
-      //<< newClient->getSocket() << std::endl;
     }
   }
   return 0;
@@ -251,7 +246,6 @@ int HttpServer::acceptIncomingConnection(fd_set &tempReadfds)
 
 void HttpServer::checkForReading(fd_set &tempReadfds)
 {
-  // //std::cout << "reading.. cleints size: "<< _clients.size() <<  "\n";
   
   for (client_it client = _clients.begin(); client != _clients.end();
        ++client)
@@ -259,19 +253,14 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
     int clientSocket = (*client)->getSocket();
     if (FD_ISSET(clientSocket, &tempReadfds))
     {
-      // //std::cout << "going to read the request\n";
-      /*** Handle data received from client. ***/
-      //   //std::cout << "id:" << (*client)->getSocket() << std::endl;
+
       char buffer[MAX_BUFFER_SIZE];
       int bytesRead = recv(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
-      // //std::cout << "---------------bytesRead------------[]" << bytesRead << std::endl;
       if (std::string(buffer).find("0\r\n\r\n") != std::string::npos) {
         FD_CLR(clientSocket, &readfds);
         FD_SET(clientSocket, &writefds);
       }
-      // //std::cout << buffer << "\n";
-      //  //std::cout << " check for reading counter : " << counter++ <<
-      //  std::endl;
+
       if (bytesRead == -1)
       {
         std::cerr << "Error receiving data from client [" << clientSocket
@@ -285,9 +274,6 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
       }
       else if (bytesRead == 0)
       {
-        // client->req.setRequestEnd(true);
-        // std::cout << "``````````````Client disconnected. Client socket: "
-        // << clientSocket << "``````````````" << std::endl;
         close(clientSocket);
         FD_CLR(clientSocket, &readfds);
         FD_CLR(clientSocket, &writefds);
@@ -296,8 +282,6 @@ void HttpServer::checkForReading(fd_set &tempReadfds)
       else
       {
         /*** Process the received data. ***/
-        // buffer[bytesRead] = '\0';
-        
         servers_it serverConf = (*client)->getConfiguration();
         try {
         if ((*client)->req.parseRequest(buffer, bytesRead, serverConf)) {
@@ -333,7 +317,6 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
         (*client)->isRequestComplete())
     {
       int tmpint = (*client)->res.getProccessPID();
-      // //std::cout << "the pid of tmpint" << tmpint << std::endl;
       if (tmpint == -1)
       {
         // Prepare and send a response to the client.
@@ -345,22 +328,10 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
           bytesSent = (*client)->sendFileResponse((*client)->res,
                                                   (*client)->getSocket());
         } else {
-          // //std::cout << "normal sendResponse" << std::endl;
           bytesSent = (*client)->sendResponse();
         }
 
         if (bytesSent == -1 || (*client)->isRespondComplete()) {
-          if (bytesSent == -1)
-          {
-          //   std::cerr << "Error sending response to client: " << strerror(errno)
-          //             << std::endl;
-          } else {
-            // Remove the client and clear its socket from the fd-sets.
-            // //std::cout << "Response sent to client socket and delete "
-                      // << clientSocket << std::endl;
-            // //std::cout << "Going to delete: "
-            //           << (*client)->res.getCGIFile().second << "\n";
-          }
           (*client)->clean(_clients);
           close(clientSocket);
           FD_CLR(clientSocket, &readfds);
@@ -375,7 +346,6 @@ void HttpServer::checkForWriting(fd_set &tempWritefds)
       {
         servers_it serverConf = (*client)->getConfiguration();
         (*client)->processRequest(serverConf);
-        // //std::cout << "PID NOW IS : " << (*client)->res.getProccessPID() << "\n";
       }
     }
     ++client;
@@ -424,6 +394,5 @@ void HttpServer::removeClient(client_it &client)
   HttpClient *temp = *client;
   client = _clients.erase(client);
   delete temp;
-  // //std::cout << ">>>> nbr of clients after delete: " << _clients.size() << "<<<<"
-  //           << std::endl;
+
 }

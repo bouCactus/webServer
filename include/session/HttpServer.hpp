@@ -74,15 +74,4 @@ class HttpServer
 
 #endif  //__HTTPSERVER__HPP
 
-/*
 
-port 80 9000
-elements
-
-port 8000;
-same elements;
-
-port 3000
-diff elements
-
-*/
